@@ -49,7 +49,7 @@ A pure javascript web framework
 ## One Minute Guide
 After the [Installation Guide](#installation-guide).
 
-1. In your HTML.
+1) In your HTML.
 
 ```html
 <!DOCTYPE html>
@@ -57,7 +57,6 @@ After the [Installation Guide](#installation-guide).
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
   <title>Test page of liber.js</title>
-  <script src="YOUR_JS_PATH/conf.js"></script>
   <script src="YOUR_JS_PATH/liber.js"></script>
   <script src="YOUR_JS_PATH/views.js"></script>     
 </head>
@@ -67,19 +66,13 @@ After the [Installation Guide](#installation-guide).
 
 ```
 
-2. In your conf.js
+2) In your views.js
 
 ```javascript
-var $conf = {
-    default_view : "my_view"
-}
-```
 
-3. In your views.js
-
-```javascript
 my_view = {
-    drawContent : function(wrapper, layer){
+    name : "my_view",
+    drawContent : function(wrapper, layer){ //implement the delegate method
         TABLE([
             TR([
                 TH("ColHeader1"),
@@ -95,11 +88,16 @@ my_view = {
     }
 };
 
-window.onload = $app.start;
+window.onload = function(){
+  $app.start("my_view");
+}
 
 ```
 
-4. Check it out by your browser
+3) Check the result on your browser
+
+
+----
 
 
 ## Five Minutes Guide
