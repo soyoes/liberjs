@@ -49,7 +49,8 @@ A pure javascript web framework
 ## One Minute Guide
 After the [Installation Guide](#installation-guide).
 
-1. In your HTML
+1. In your HTML.
+
 ```html
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
