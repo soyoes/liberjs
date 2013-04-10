@@ -94,6 +94,9 @@ my_view = {
         ], document.body);
     }
 };
+
+window.onload = $app.start;
+
 ```
 
 4. Check it out by your browser
