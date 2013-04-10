@@ -8,8 +8,17 @@ A pure javascript web framework
 
 
 # The Javascript Framework
+
+* [Installation Guide](#installation-guide)
+
+
+----
+
 * [One Minute Guide](#one-minute-guide)
 * [Five Minutes Guide](#five-minutes-guide)
+
+----
+
 * [Architecture](#architecture)
 * [View Controllers & Delegate](#view-controllers--delegate)
 * [Selectors](#selectors)
@@ -24,14 +33,22 @@ A pure javascript web framework
 
 ----
 
-* [#ClassReference Class Reference]
+* [Class Reference](#class-reference)
 
+
+
+## Installation Guide
+
+* download or checkout all js files from here 
+
+* put them in your WEBROOT/JS_DIR
 
 
 ----
 
 ## One Minute Guide
-After the [wiki:doc_server#InstallationGuide The installation guide].
+After the [Installation Guide](#installation-guide).
+
 1. In your HTML
 ```html
 <!DOCTYPE html>
