@@ -874,18 +874,22 @@ var __element = {
 		
 	 * */
 	animate : function (opts) {
-		if(opts.delay>0){
-			delay = opts.delay;
+		var ele = this;
+		if(opts.delay){
+			delay = parseInt(opts.delay);
 			delete opts["delay"];
-			$utils.setTimeout(function(arg){if(arg.ele)arg.ele.animate(arg.opts);}, delay, {ele:this, opts:opts});
-			return this;
+			$utils.setTimeout(function(arg){
+				if(arg.ele)
+					arg.ele.animate(arg.opts);
+			}, delay, {ele:ele, opts:opts});
+			return ele;
 		}
 		var start = new Date();
 		opts.duration = opts.duration||1000;
 		opts.frame = opts.frame || 50;
 		opts.interval = 1000/opts.frame;
 		opts.delta = opts.delta || "linear";
-		var ele = this;
+		
 		var inter = setInterval(function() {
 			var timePassed = new Date - start;
 			var progress = timePassed / opts.duration;
