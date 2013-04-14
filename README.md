@@ -17,6 +17,8 @@ A pure javascript web framework
 * render HTML with js methods named as same as HTML Tags, and support nested layout.
 * Veriable utils to make it easier to use basical datatypes | gennerate animation | play HTTP/Soccket request...
 * Reuse resources like rendered HTML, data ... to improve the performance.
+* Multiple layers
+* History control.
 * works on IE8+ , Webkit(Chrome, Safari, Opera), Firefox.
 
 
