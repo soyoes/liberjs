@@ -1,13 +1,26 @@
 liberjs
 =======
 
+
 A pure javascript web framework
 
-* works on IE9+ , Webkit, Firefox.
-* render HTML
+# Goals
+* Liberated the server from view rendering. to let it concentrate on API/Calculating/Auth/SEO ...
+* Save your much time from making pages UI. 
+* Make the view transition under controll by independent logic
+* Provide better user expierence by reduce the delay on screen transition.
+
+# Main features
+* Written in pure JS
+* Message driven architecture, all view controllers only need to implement required delegate methods .
+* Only requied libraries will be included automatically.
+* render HTML with ne methods named as same as HTML Tags, and support nested layout.
+* Veriable utils to make it easier to use basical datatypes | gennerate animation | play HTTP/Soccket request...
+* Reuse resources like rendered HTML, data ... to improve the performance.
+* works on IE8+ , Webkit(Chrome, Safari, Opera), Firefox.
 
 
-# The Javascript Framework
+# About The Framework
 
 * [Installation Guide](#installation-guide)
 
