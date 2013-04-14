@@ -14,7 +14,7 @@ A pure javascript web framework
 * Written in pure JS
 * Message driven architecture, all view controllers only need to implement required delegate methods .
 * Only requied libraries will be included automatically.
-* render HTML with ne methods named as same as HTML Tags, and support nested layout.
+* render HTML with js methods named as same as HTML Tags, and support nested layout.
 * Veriable utils to make it easier to use basical datatypes | gennerate animation | play HTTP/Soccket request...
 * Reuse resources like rendered HTML, data ... to improve the performance.
 * works on IE8+ , Webkit(Chrome, Safari, Opera), Firefox.
