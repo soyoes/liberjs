@@ -847,6 +847,16 @@ var __element = {
 		}
 		return this;
 	},
+	
+	height : function(){
+		el = this;
+		return Math.max(el.clientHeight||0,el.scrollHeight||0,el.offsetHeight||0);
+	},
+	width : function(el){
+		el = this;
+		return Math.max(el.clientWidth||0,el.scrollWidth||0,el.offsetWidth||0);
+	},
+	
 	/*
 	var __html = function(opts){
 		if(!opts) return this.innerHTML;
@@ -907,7 +917,7 @@ var __element = {
 		}, opts.interval);
 		return this;
 	}
-} 
+};
 
 if($browser.name!="MSIE" && $browser.version>=9){
 	$utils.extend(Element.prototype,__element);
@@ -1214,7 +1224,7 @@ var UIKits = function(){
         }
         e.returnValue = false;
     };
-
+    
 	this.addLayer=function(oncreate, params, dontHideOthers){
 		if(!dontHideOthers){
 			for(i in window._layers)
