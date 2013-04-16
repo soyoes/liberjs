@@ -334,7 +334,70 @@ String.prototype.getByte=function(){
 String.prototype.trim = function() {
     return this.replace(/^\s+|\s+$/g, "");
 };
-
+String.prototype.CJKLength = function() {
+	len = 0;
+	str = escape(this);
+	for (i=0; i<str.length; i++, len++) {
+		if (str.charAt(i) == "%") {
+			if (str.charAt(++i) == "u") {
+				i += 3;
+				len++;
+			}
+			i++;
+		}
+	}
+	return len;
+};
+String.prototype.screenSize=function(font, fontSize, maxWidth){
+	text = this;
+	rowSpliter = "\n";
+	di = document.createElement('input');
+	di.id = 'dummy_text_size_calculator';
+	style = {
+		border:0,
+		margin:0,
+		outer:0,
+		padding:0,
+		color:'trasparent',
+		backgroundColor:'trasparent',
+		whiteSpace:'nowrap'
+	};
+	for(k in style)
+		di.style[k] = style[k];
+	
+	if(font)
+		di.style.fontFamily=font;
+	if(fontSize)
+		di.style.fontSize=fontSize;
+	lines = text.split(rowSpliter);
+	longestRow = "";
+	rowCols = [];
+	for (r in lines){
+		row = lines[r];
+		if(row.length>longestRow.CJKLength())longestRow = row;
+		rowCols.push(row.length);
+	}
+	di.value = longestRow;
+	di.size = longestRow.CJKLength();
+	document.body.appendChild(di);
+	size = {width:di.clientWidth+di.size, height:(di.clientHeight+1)*lines.length};
+	di.parentNode.removeChild(di);
+	if(maxWidth && size.width>maxWidth){
+		charW = size.width / longestRow.length;
+		maxChars = Math.floor(maxWidth/charW);
+		size.width = maxWidth;
+		orgRows = lines.length;
+		rowH = size.height/orgRows;
+		for(i=0;i<rowCols.length;i++){
+			chars = rowCols[i];
+			if(chars>maxChars)
+				orgRows += (Math.ceil(chars*charW/maxWidth)-1);
+		}
+		size.height = orgRows * rowH;
+	}
+	console.log(text+"-"+fontSize+":"+(size.width)+","+(size.height));
+	return size;
+};
 
 var $utils = {
 	/**
@@ -484,15 +547,26 @@ var $utils = {
 		jsId = jsId[jsId.length-1].replace(/\./g,"_");
 		var packageName = jsId.replace("_js","");
 		if(!$id(jsId)){
-			$e("script",{id:jsId,src:src},document.head);
+			se = document.createElement("script");
+			se.id= jsId;
+			se.src = src;
+			document.head.appendChild(se);
 			if(!$utils.__include)
 				$utils.__include = {};
 			$utils.__include[jsId] = {
 				"interval" : setInterval(function(){
 					if($utils.included(packageName)){
 						clearInterval($utils.__include[jsId].interval);
-						if($utils.__include[jsId].callback)
-							$utils.__include[jsId].callback($utils.__include[jsId].params);
+						if($utils.__include[jsId].callback){
+							cb = $utils.__include[jsId].callback;
+							if(typeof(cb)=="function")
+								cb($utils.__include[jsId].params);
+							else if(typeof(cb)=="string"){
+								cb = window[cb];
+								if(cb)
+									cb($utils.__include[jsId].params);
+							}
+						}
 						console.log("Included-times",$utils.__include[jsId].times+1);
 						delete $utils.__include[jsId];
 					}else{
@@ -507,10 +581,19 @@ var $utils = {
 				"callback" : callback,
 				"times" : 0,
 				"params":params
-			}
+			};
 		}else{
-			if(callback)
-				callback(params);
+			if(callback){
+				if(typeof(callback)=="function")
+					callback(params);
+				else if(typeof(callback)=="string"){
+					callback = window[callback];
+					if(callback)
+						callback(params);
+				}
+					
+			}
+				
 		}
 	},
 	setTimeout : function(func, delay, params){
@@ -695,7 +778,7 @@ var $deltas = {
 			delta = $deltas[delta];
 		return function(progress){
 			return 1 - delta(1 - progress);
-		}
+		};
 	},
 	
 	/**
@@ -710,7 +793,7 @@ var $deltas = {
 			} else { // the second half
 				return (2 - delta(2 * (1 - progress))) / 2;
 			}
-		}
+		};
 	}
 };	
 
@@ -919,10 +1002,10 @@ var __element = {
 	}
 };
 
-if($browser.name!="MSIE" && $browser.version>=9){
-	$utils.extend(Element.prototype,__element);
+if($browser.name=="MSIE" &&  $browser.version<9){
+	$utils.include("liber.ie8", "ie8_enhance");
 }else{
-	$utils.include("liber.ie8", ie8_enhance);
+	$utils.extend(Element.prototype,__element);
 }
 
 
@@ -1536,7 +1619,7 @@ var HTTPKits = function(){
   			}
   		}
   		method =method.toUpperCase();  
-  		//console.log('http send ',method,url,userdata);
+  		console.log('http send ',method,url,userdata);
   		xhr.open(method,url,true);
   		if(method == 'POST' || method == 'PUT' || method == 'DELETE'){
   			xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
