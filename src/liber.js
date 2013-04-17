@@ -505,6 +505,12 @@ var $utils = {
 	isArray : function(v){
 		return Object.prototype.toString.call( v ) === '[object Array]';
 	},
+	isElement : function(o){
+		return (
+		    typeof HTMLElement === "object" ? o instanceof HTMLElement : //DOM2
+		    o && typeof o === "object" && o.nodeType === 1 && typeof o.nodeName==="string"
+		);
+	},
 	isFunction : function(functionToCheck) {
 		var getType = {};
 		return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
