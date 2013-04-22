@@ -828,17 +828,20 @@ var __element = {
 	
 	css : function(arg1,arg2){
 		if(typeof(arg1)=="string"){
-			if(arg2!=undefined)
+			if(arg2!=undefined){
+				if(arg1.indexOf("background")>=0 && arg2.indexOf("url(")>=0 && $conf.image_path){
+					arg2 = arg2.replace("url(", "url("+$conf.image_path);
+				}
 				this.style[arg1] = arg2;
-			else 
+			}else 
 				return this.style[arg1];
 		}else if(typeof(arg1)=="object" && !arg2){
 			for(f in arg1){
-				this.style[f] = arg1[f];
+				//this.style[f] = arg1[f];
+				this.css(f,arg1[f]);
 			}
 		}
 		return this;
-		
 	},
 
 	attr : function(arg1,arg2){
@@ -848,7 +851,11 @@ var __element = {
 			if(arg1=="class")
 				arg1 = "className";
 			if(arg2!=undefined){
-				this[arg1] = arg2;
+				if(this.tagName == "IMG" && arg1.toLowerCase()=="src"){
+					this[arg1] = $conf.image_path? $conf.image_path+arg2:arg2;
+				}else{
+					this[arg1] = arg2;
+				}
 				if(typeof(arg2)!="function" && !$utils.isBool(arg2)){
 					if(this.tagName == "INPUT"){
 						/*IE8 doeesn't support input.name=xxx*/
@@ -882,7 +889,7 @@ var __element = {
 							}
 						}
 					} 
-					if(arg1!="innerHTML"&&arg1!="className")
+					if(arg1!="innerHTML"&&arg1!="className") //FIXME check if element has this property 
 						this.setAttribute(arg1,arg2);
 				}
 			}else{
@@ -1024,7 +1031,7 @@ var $e = function(type, args, target){
 		dataType = typeof(args);
 		if(dataType=="string"){
 			switch(type){
-				case "img" : _el.src = args;
+				case "img" : _el.src = $conf.image_path? $conf.image_path+args:args;
 					break;
 				case "a" : _el.href = args;
 					break;
@@ -1255,7 +1262,6 @@ var $msg = {
 		}
 	}
 };
-
 
 var UIKits = function(){
 	var _this = this;
