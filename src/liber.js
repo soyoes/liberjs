@@ -197,6 +197,7 @@ var $history = {
 					$history.stack.pop();
 					$history.stack.pop();
 					console.log("remove layer");
+					window._layers.pop();
 					$ui.removeLayer();
 				}else{
 					if($history.stack[$history.stack.length-1]!=anc)
@@ -1336,8 +1337,9 @@ var UIKits = function(){
     
 	this.addLayer=function(oncreate, params, dontHideOthers){
 		if(!dontHideOthers){
-			for(i in window._layers)
-				$ui.hide(window._layers[i]);	
+			for(i in window._layers){
+				$ui.hide(window._layers[i]);
+			}
 		}
 		layer = document.createElement("div");
 		layer.id = "layer_"+window._layerIDX;
@@ -1390,7 +1392,13 @@ var UIKits = function(){
 				window._layers.pop();
 				return this.showLastLayer();
 			}
-			$ui.show(last);
+			if($id(last.id))
+				$ui.show(last);
+			else{
+				window._layers.pop();
+				return $ui.showLastLayer();
+			}
+				
 		}else{
 			if($conf.default_view){
 				$app.loadView($conf.default_view);
