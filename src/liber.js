@@ -1045,6 +1045,19 @@ var $e = function(type, args, target){
 				if(args[_argIdx]!=null){
 					if($utils.isElement(args[_argIdx])){
 						_el.appendChild(args[_argIdx]);
+					}else if($utils.isFunction(args[_argIdx])){
+						var thisEl = _el;
+						res = args[_argIdx]();
+						if($utils.isArray(res)){
+							for(i in res){
+								if($utils.isElement(res[i]))
+									thisEl.appendChild(res[i]);
+							}
+						}else if($utils.isElement(res)){
+							console.log(res,_el);
+							thisEl.appendChild(res);
+						}
+						_el = thisEl;
 					}else{
 						//console.log("ERROR : can not append child ",args[_argIdx]);
 					}
