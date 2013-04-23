@@ -1267,6 +1267,10 @@ var UIKits = function(){
 	var _this = this;
 	this.hide = function(args){
 		if(!args)return;
+		if(typeof(args)=="object"&&args.style){
+			args.style.display = "none";
+			return;
+		}
 		args = (typeof(args)=="string") ? [args]:args;
 		for(i in args){
 			d = $id(args[i]);
@@ -1276,6 +1280,12 @@ var UIKits = function(){
 
 	this.show = function(args){
 		if(!args)return;
+		if(typeof(args)=="object"&&args.style){
+			if(args.className)
+				args.className = args.className.replace("hidden","");
+			args.style.display = "block";
+			return;
+		}
 		args = (typeof(args)=="string") ? [args]:args;
 		for(i in args){
 			d = $id(args[i]);
@@ -1284,6 +1294,10 @@ var UIKits = function(){
 	};
 	this.toggle = function(args){
 		if(!args)return;
+		if(typeof(args)=="object"&&args.style){
+			args.style.display = args.style.display== "none"?"block":"none";
+			return;
+		}
 		args = (typeof(args)=="string") ? [args]:args;
 		for(i in args){
 			if(d = $id(args[i])){
