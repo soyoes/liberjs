@@ -24,6 +24,7 @@ var $app = {
 			modules : [],
 			liber_path : "/js/",
 		};
+		$app.start_view = start_view;
 		for(i in __default){
 			if(!$conf[i])$conf[i]=__default[i];
 		}
@@ -31,8 +32,15 @@ var $app = {
 			for(i in $conf.modules){
 				$utils.include($conf.modules[i]);
 			}
-		if(typeof(start_view)=="string")
-			$app.loadView(start_view);
+		if($app.onload)
+			$app.onload();
+		else{
+			$app.loaded();
+		}
+	},
+	loaded : function(){
+		if(typeof($app.start_view)=="string")
+			$app.loadView($app.start_view);
 		else
 			$app.loadView();
 	},
