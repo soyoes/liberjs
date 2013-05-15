@@ -1455,18 +1455,20 @@ var UIKits = function(){
 	this.showMessage = function(msg, func, params){
 		/*show message*/
 		$ui.addLayer(function(layer,params){
-			layer.className="layer-black";
 			layer.attr("layer-type","message");
+			//mask = $div({className:"layer-black"},layer);
+			layer.className = "layer-black";
 			if (window.addEventListener) {
             	window.addEventListener('DOMMouseScroll', this.preventDefault, false);
         	}
 			
         	window.onmousewheel = this.preventDefault;
         	if(document.onmousewheel)
-        		document.onmousewheel = this.preventDefault;	
+        		document.onmousewheel = this.preventDefault;
 			/*show message window*/
 			box = $id("messageBox");
-			msgtop = document.body.scrollTop+240;
+			msgtop = 240;
+			layer.style.top = document.body.scrollTop+"px";
 			if(!box)box = $div({id:"messageBox",html:msg},layer).css("marginTop",msgtop+"px");
 			if(func && typeof(func)=="function")
 				func(params,box);
