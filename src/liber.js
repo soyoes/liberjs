@@ -1,7 +1,7 @@
 /**
  * @author soyoes 
  * @Copywrite (c) 2013, Liberhood, http://liberhood.com 
- * @URL : https://code.google.com/p/liber-js/
+ * @URL : https://github.com/soyoes/liberjs
  * @license : MIT License
  */
 window._params = undefined;
