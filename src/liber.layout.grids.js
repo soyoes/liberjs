@@ -27,7 +27,8 @@ var $layout = {
 		if(opts){
 			for(var k in opts)$layout[k]=opts[k];
 		}
-		var layout = $div({id:"sm-layout"},target);
+		var frame = $div({"id":"sm-frame"},target).css({width:$layout.cellWidth,height:$layout.cellHeight,overflow:"hidden"});
+		var layout = $div({id:"sm-layout"},frame);
 		var sumH=0,sumW=0,cells=[];
 		for(var r=0;r<$layout.rows;r++){
 			cells[r]=[];
@@ -88,7 +89,7 @@ var $layout = {
 			}
 
 			var content = $div({id:"content"},cell);
-			var wrapper=$div({},content).css({"overflow-y":"auto", "-webkit-overflow-scrolling":"touch",height:"1024px"});
+			var wrapper=$div({},content).css({overflow:"hidden","overflow-y":"auto", "-webkit-overflow-scrolling":"touch",height:"1024px"});
 			
 			if(view.drawContent){
 				if(view.layer)
