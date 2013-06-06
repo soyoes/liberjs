@@ -88,15 +88,13 @@ var $layout = {
 			if(!view.noHeader){
 				var header =  $app.drawHeader? $app.drawHeader(cell):$div({id:"header"},cell);
 				if(view.drawHeader)
-					view.drawHeader(header);	
+					view.drawHeader(header,cell);	
 			}
 
 			var content = $div({id:"content"},cell);
 			var wrapper=$div({},content).css({overflow:"hidden","overflow-y":"auto", "-webkit-overflow-scrolling":"touch",height:"1024px"});
 			
 			if(view.drawContent){
-				if(view.layer)
-					$ui.remove(view.layer);
 				view.layer = cell;
 				view.wrapper = wrapper;
 				view.drawContent(wrapper,cell);	
@@ -113,7 +111,7 @@ var $layout = {
 		
 	},
 	closeView : function(view){
-		var pos = $grid.last || $grid.center;
+		var pos = $layout.last || $layout.center;
 		var dis={row:pos.row-$layout.cursor.row, col:pos.col-$layout.cursor.col};
 		//move
 		$layout.move(dis.row, dis.col);
@@ -157,6 +155,12 @@ var $layout = {
 			setTimeout(function(res){
 				$layout.distance = null;
 			},dur+100);
+		}
+	},
+	clear:function(row,col){
+		if($layout.cells[row]&&$layout.cells[row][col]){
+			var c = $layout.cells[row][col];
+			c.innerHTML = "";
 		}
 	}
 };

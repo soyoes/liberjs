@@ -21,6 +21,7 @@ var $browser = (function(){
 var $app = {
 	_view : undefined,
 	layers : [],
+	_histories : [],
 	start : function(start_view){
 		__default = {
 			modules : [],
@@ -98,6 +99,7 @@ var $app = {
 					return;
 				}
 				$this = view;
+				$app._histories.push($this);
 				view.params = params;
 				if(view.onload){
 					console.log("view.onload");
@@ -123,11 +125,17 @@ var $app = {
 		view = view || $this;
 		if(typeof(view)=="string") view = window[view];
 		if(!view)return;
-		$this = $app.view = undefined;
-		//FIXME $this should not be undefined.
+		$app.view = undefined;
+		if($app._histories.length>1){
+			$app._histories.pop();
+		}
+		$this = ($app._histories.length>1)?$app._histories.pop():$app._histories[0];
+		$app.view = $this;
 		if(view.onclose)
 			view.onclose();
 		$app.layout.closeView(view);
+		console.log($app._histories,$this);
+		
 	}
 };
 
