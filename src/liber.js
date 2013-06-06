@@ -356,6 +356,16 @@ var $utils = {
 		}
 		return false;
 	},
+	clone : function(o){
+		if(typeof(o)=="object"){
+			var ob = {};
+			for(var k in o)ob[k]=o[k];
+			return ob;
+		}else if($utils.isArray(o)){
+			return o.slice(0);
+		}
+		return o;
+	},
 	include : function(src, callback,params){
 		if(src.indexOf(".js")<0)
 			src+=".js";

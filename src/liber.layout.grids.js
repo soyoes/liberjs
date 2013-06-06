@@ -117,7 +117,7 @@ var $layout = {
 	move : function(rowOffset, colOffset){
 		if($layout.distance)
 			return;
-		$layout.last = $layout.cursor;
+		$layout.last = $utils.clone($layout.cursor);
 		var nextRow = rowOffset+$layout.cursor.row;
 		var nextCol = colOffset+$layout.cursor.col;
 		if(nextCol >= $layout.cols || nextCol<0)
