@@ -70,7 +70,7 @@ var $layout = {
 	drawView : function(view){
 		//get cellidx from view
 		var pos = view.cell;  
-		if(!pos||!pos.row||!pos.col){
+		if(!pos||pos.row==undefined||!pos.col==undefined){
 			//use right one
 			pos = {row:$layout.cursor.row, col:$layout.cursor.col+1};
 		}
