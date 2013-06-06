@@ -63,6 +63,9 @@ var $layout = {
 			position: "relative",
 			overflow : "hidden",
 		});
+		layout.onscroll = function(e){
+			e.preventDefault();
+		};
 		$layout.cells = cells;
 		$layout.width = sumW;
 		$layout.height = sumH;
