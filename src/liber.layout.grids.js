@@ -3,8 +3,7 @@ $utils.package("liber.layout.grids");
 /*
  * @delegates:
  * 		smInitCell(cell,row,col)
- * 		smBeforeMove(cell,animateOption)
- * 		smAfterMove(cell)
+ * 		smOnMove(delta)
  * 		
  * */
 var $layout = {
@@ -146,6 +145,8 @@ var $layout = {
 				step:function(el, delta){
 					el.style.marginLeft = -1*($layout.distance.orgX+delta*$layout.distance.x);
 					el.style.marginTop = -1*($layout.distance.orgY+delta*$layout.distance.y);
+					if($layout.delegate.smOnMove)
+						$layout.delegate.smOnMove(delta);
 				}
 			}; 
 			$layout.panel.animate(animeOpt);
