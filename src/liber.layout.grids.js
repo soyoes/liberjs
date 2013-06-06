@@ -21,7 +21,7 @@ var $layout = {
 	bottomHeight:0,
 	
 	init : function(target, delegate, opts){
-		console.log("screen size",$layout.cellWidth,$layout.cellHeight);
+		//console.log("screen size",$layout.cellWidth,$layout.cellHeight);
 		if(delegate){
 			$layout.delegate = delegate;
 		}
@@ -49,7 +49,7 @@ var $layout = {
 					delegate.smInitCell.call(delegate, cell, r, c);
 				}
 				if(r==$layout.cursor.row&&c==$layout.cursor.col){
-					console.log("set margin",sumW,sumH);
+					//console.log("set margin",sumW,sumH);
 					layout.css({marginTop : -1 * sumH + "px",marginLeft : -1 * sumW + "px"});
 				}
 				sumW+=w;
@@ -80,7 +80,6 @@ var $layout = {
 		//drawView to cell
 		var cell = $layout.cells[pos.row][pos.col];
 		if(!(view.reusable && cell.innerHTML && cell.innerHTML.length>0)){
-			console.log("grid drawView");
 			cell.innerHTML = "";
 			cell.attr("view", view.name);
 			if(!view.noHeader){
@@ -126,7 +125,7 @@ var $layout = {
 			colOffset=0;
 		if(nextRow >= $layout.rows || nextRow<0)
 			rowOffset=0;
-		console.log(rowOffset, colOffset,"MOVE TO:",nextRow,nextCol)
+		//console.log(rowOffset, colOffset,"MOVE TO:",nextRow,nextCol)
 		if(rowOffset!=0||colOffset!=0){
 			var currentCell = $layout.cells[$layout.cursor.row][$layout.cursor.col];
 			var targetCell = $layout.cells[nextRow][nextCol];
