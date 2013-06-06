@@ -138,7 +138,7 @@ var $layout = {
 			$layout.cursor.col = nextCol;
 			$layout.cursor.row = nextRow;
 			var layout = $id("sm-layout");
-			var dur = 300;
+			var dur = 200;
 			var animeOpt = {
 				frame : 20,
 				duration:dur,
