@@ -33,21 +33,26 @@ var $app = {
 		}
 		var lo = ($conf.layout)?$conf.layout:($browser.device=="smartphone"?"grids":"overlay");
 		$conf.modules.push("liber.layout."+lo);
-		$app.m2l = $conf.modules.length;
-		var mod_loaded = function(f){
-			console.log("Liber Module Loaded : ("+$app.m2l+"/"+$conf.modules.length+")", f.replace("liber.",""));
-			$app.m2l=$app.m2l-1;
-			if($app.m2l<=0){
-				delete $app["m2l"];
-				$app.preloaded();
-			}
-		};
+		
+		var images = $conf.preload_images?$conf.preload_images:[];
+		
+		var progbar = $ui.progressBar(document.body, $conf.modules.length+images.length, {
+			update:function(progress, f){console.log("Preload : ",progress+"%",f);},
+			finish:function(progress, f){console.log("Preload DONE");$app.preloaded();},
+		});
+		var loadFunc = function(v){progbar.update(v);};
 		for(var i in $conf.modules){
-			$utils.include($conf.modules[i], mod_loaded, $conf.modules[i]);
+			$utils.include($conf.modules[i], loadFunc, $conf.modules[i]);
+		}
+		if(images.length>0){
+			$utils.preload(images, loadFunc, loadFunc);
 		}
 		
 	},
+
 	preloaded : function(){
+		$ui.remove("progressBarFrame");
+		$ui.remove("progressBarLabel");
 		$app.layout.init(document.body, $app, $conf.layout_options||{});
 		if($app.onload)
 			$app.onload();
@@ -325,6 +330,23 @@ var $utils = {
 		   pairs.push([prop,params[prop]].join('='));
 		}
 		return pairs.join(spliter);
+	},
+	/**
+	 * preload image list (or css|font)
+	 * */
+	preload : function(files, onfileLoad, onfileError){
+		for(var i =0;i<files.length;i++){
+	    	var f = files[i];
+	    	if(f.indexOf("http")!=0&&$conf.preload_image_path){
+				if(f.indexOf($conf.preload_image_path)!=0){
+					f = $conf.preload_image_path + f;
+				}
+			}
+	    	var img = new Image();
+	    	if(onfileLoad)img.onload = function(e){e=e||window.event;var target=e.target||e.srcElement;onfileLoad(target.src);};
+	    	if(onfileError)img.onerror =function(e){e=e||window.event;onfileError(e.target||e.srcElement);};
+	    	img.src = f;
+	    }
 	},
 	keyCode : function(e){
 		if(document.all)
@@ -917,7 +939,7 @@ var $e = function(type, args, target){
 		target.appendChild(_el);
 	return _el;
 };
-var TAGS = ["table","tr","th","td","div","img","ul","lo","li","p","a","b","strong","textarea","br","hr","form","input","span","label","h1","h2","h3"];
+var TAGS = ["table","tr","th","td","div","img","ul","lo","li","p","a","b","strong","textarea","br","hr","form","input","span","label","h1","h2","h3","canvas"];
 for(var i in TAGS){
 	if(typeof(TAGS[i])=="function")continue;
 	eval(["var " , TAGS[i].toUpperCase() , "= function(args,target){ return $e('" , TAGS[i],  "', args,target); };"].join(''));
@@ -1315,6 +1337,71 @@ var $ui = {
 			}else
 				$ui.remove(box);
 		}	
+	},
+	/**
+	 * opts = {
+	 * 	width : 240
+	 * 	height : 18
+	 *  label : "Loading ... "
+	 *  labelStyle : {}
+	 *  strokeColor : #ccc
+	 *  bgColor : #666 
+	 *  update : function(progress, params)
+	 *  finish : function()
+	 * }
+	 * 
+	 * css : {
+	 * 	#progress-bar-frame
+	 *  #progress-bar-label
+	 * }
+	 * 
+	 * */
+	progressBar :function(target,max,opts){
+		var ProgressBar = function(target,max,opts){
+			opts = opts||{};
+			var barWidth = opts.width || 240;
+			var barHeight = opts.height || 18;
+			var maxValue = max;
+			var value = 0;
+			var labelPrefix = opts.label || "Loading ... ";
+			var barFrame = $div({id:"progress-bar-frame"},target).css({margin:"300px auto auto auto",position:"relative",width:barWidth+"px",height:barHeight+"px",padding:"0px",border:"3px double #666",borderRadius:"5px",fontSize:"0pt"});
+			var canv = $canvas({width:barWidth,height:barHeight},barFrame);
+			var barLabel = $span({id:"progress-bar-label",html:labelPrefix+"0%"},document.body).css(opts.labelStyle||{position:"absolute",top:310+barHeight+"px",width:"100%",height:"30px",zIndex:100,color:"#000",textAlign:"center",fontFamily:"verdana"});
+			var ctx = canv.getContext("2d");
+			var onUpdate = opts.update||null;
+			var onFinish = opts.finish||null;
+		    ctx.fillStyle = opts.bgColor|| "#666";
+		    ctx.strokeStyle = opts.strokeColor||"#CCC";
+		    ctx.lineWidth = 10;
+		    this.update = function(param){
+		    	value++;
+				var progress = parseInt(value*100/maxValue);
+				if(onUpdate){onUpdate(progress,param);}
+				canv.attr({"value":progress});
+				canv.animate({
+	    	        duration:300,
+	    	        step:function(el,delta){
+	    	        	var v=el.attr("value");
+	    	        	ctx.clearRect(0,0,barWidth,barHeight);
+	    	        	var w = delta*v/100*barWidth;
+	    	           	ctx.fillRect(0, 0, w, barHeight);
+	    	           	ctx.beginPath();
+	    	           	for(var j=0;j<=w/20;j++){
+	    	           		ctx.moveTo(j*20+10, -5);
+	    	           		ctx.lineTo(j*20,barHeight+5);
+	    	           	}
+	    	           	ctx.closePath();
+	    	           	ctx.stroke();
+	    	        }
+	    	    });
+				barLabel.innerHTML=labelPrefix+progress+"%";
+	    		if(progress>=100){
+	    			if(onFinish){onFinish();}
+	    		}
+			};
+		};
+		
+		return new ProgressBar(target,max,opts);
 	},
 	showAlertWindow : function(msg, data, onOK, onCancel){
 		$ui.showMessage(msg,function(params,box){
