@@ -1,4 +1,4 @@
-$utils.package("core.ui.calendar");
+$utils.package("liber.ui.calendar");
 
 
 var Calendar = function(attrs,onclick){

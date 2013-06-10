@@ -1,4 +1,4 @@
-$utils.package("core.ui.ext");
+$utils.package("liber.ui.ext");
 $ui.countDown = function(domId,callback){
 	if(domId)
 		$ui.counterDomId = domId;

@@ -1,4 +1,4 @@
-$utils.package("core.mapkit");
+$utils.package("liber.mapkit");
 
 var MapKits = function(){
 

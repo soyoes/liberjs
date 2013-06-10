@@ -34,8 +34,8 @@ var $app = {
 		var lo = ($conf.layout)?$conf.layout:($browser.device=="smartphone"?"grids":"overlay");
 		$conf.modules.push("liber.layout."+lo);
 		$app.m2l = $conf.modules.length;
-		var mod_loaded = function(){
-			console.log("module loaded",$app.m2l);
+		var mod_loaded = function(f){
+			console.log("Liber Module Loaded : ("+$app.m2l+"/"+$conf.modules.length+")", f.replace("liber.",""));
 			$app.m2l=$app.m2l-1;
 			if($app.m2l<=0){
 				delete $app["m2l"];
@@ -43,7 +43,7 @@ var $app = {
 			}
 		};
 		for(var i in $conf.modules){
-			$utils.include($conf.modules[i], mod_loaded);
+			$utils.include($conf.modules[i], mod_loaded, $conf.modules[i]);
 		}
 		
 	},
@@ -390,6 +390,7 @@ var $utils = {
 			if(!$utils.__include)
 				$utils.__include = {};
 			$utils.__include[jsId] = {
+				"src" : se.src,
 				"interval" : setInterval(function(){
 					if($utils.included(packageName)){
 						clearInterval($utils.__include[jsId].interval);
@@ -403,14 +404,14 @@ var $utils = {
 									cb($utils.__include[jsId].params);
 							}
 						}
-						console.log("Included-times",$utils.__include[jsId].times+1);
+						//console.log("Included-times",$utils.__include[jsId].times+1);
 						delete $utils.__include[jsId];
 					}else{
 						$utils.__include[jsId].times = $utils.__include[jsId].times+1;
 						if($utils.__include[jsId].times>50){
 							clearInterval($utils.__include[jsId].interval);
+							console.log("Include timeover", $utils.__include[jsId].src);
 							delete $utils.__include[jsId];
-							console.log("Include timeover");
 						}
 					}
 				},10),
@@ -792,11 +793,43 @@ var __element = {
 			}, delay, {ele:ele, opts:opts});
 			return ele;
 		}
-		var start = new Date();
+		var start = Date.now();
 		opts.duration = opts.duration||1000;
-		opts.frame = opts.frame || 50;
+		opts.frame = opts.frame || 60;
 		opts.interval = 1000/opts.frame;
 		opts.delta = opts.delta || "linear";
+		
+		
+		/*
+		 * 
+		 var animeFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
+        				window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+		var cancel= window.webkitCancelAnimationFrame||window.cancelAnimationFrame||window.mozCancelAnimationFrame||window.msCancelAnimationFrame;
+		var fstep = function(time){
+			var timePassed=Date.now()-start;
+			var progress = timePassed / opts.duration;
+			if (progress > 1) progress = 1;
+			var delta = $deltas[opts.delta];
+			if(opts.style){
+				if(opts.style=="easeOut") delta = $deltas.easeOut(delta);
+				if(opts.style=="easeInOut") delta = $deltas.easeInOut(delta);
+			}
+			var delta_value = delta(progress);
+			console.log(time,timePassed, progress, delta_value);
+			opts.step(ele, delta_value);
+			if(progress>=1){
+				cancel(animeID);
+			}else{
+				fstep();
+			}
+
+		};
+		
+		var animeID = animeFrame(fstep);
+		console.log("anime",animeID);
+		*/
+		
+		
 		var interv= setInterval(function() {
 			var timePassed = new Date - start;
 			var progress = timePassed / opts.duration;
@@ -812,6 +845,8 @@ var __element = {
 				clearInterval(interv);
 			}
 		}, opts.interval);
+		
+		
 		return this;
 	}
 };
@@ -854,7 +889,7 @@ var $e = function(type, args, target){
 									thisEl.appendChild(res[_i]);
 							}
 						}else if($utils.isElement(res)){
-							console.log(res,_el);
+							//console.log(res,_el);
 							thisEl.appendChild(res);
 						}
 						_el = thisEl;

@@ -1,4 +1,4 @@
-$utils.package("core.ie8");
+$utils.package("liber.ie8");
 
 if (!JSON) {/*For IE~8*/
     var JSON = {};

@@ -1,4 +1,4 @@
-$utils.package("core.ui.forms");
+$utils.package("liber.ui.forms");
 
 
 String.prototype.validate = function(type){ 
