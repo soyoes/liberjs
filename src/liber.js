@@ -1382,7 +1382,7 @@ var $ui = {
 	    	        duration:300,
 	    	        step:function(el,delta){
 	    	        	var v=el.attr("value");
-	    	        	ctx.clearRect(0,0,barWidth,barHeight);
+	    	        	//ctx.clearRect(0,0,barWidth,barHeight);
 	    	        	var w = delta*v/100*barWidth;
 	    	           	ctx.fillRect(0, 0, w, barHeight);
 	    	           	ctx.beginPath();
