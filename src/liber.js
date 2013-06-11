@@ -1451,6 +1451,32 @@ var $ui = {
 			},100);
 		}
 	},
+	loading:function(target, styles){
+		var frame = $div({id:"loading"},target).css({width:"50px"});
+		if(styles){
+			frame.css(styles);	
+		}
+		var canv = $e("canvas",{id:"canv", width:"50px",height:"20px"},frame);
+		var ctx = canv.getContext("2d");
+	    var copt = {
+	        	frame:60,
+	        	duration:400,
+	        	step:function(el,delta){
+	        		ctx.clearRect(0,0,70,25);
+	        		var times = parseInt(delta/0.2)+1;
+	        		if(times>5)times=5;
+	        		for(var i=0;i<times;i++){
+	        			ctx.fillStyle = "rgb("+(180-i*32)+","+(180-i*32)+","+(180-i*32)+")";
+	        			ctx.fillRect(i*10, 10-i, 7, 10+i);
+	        		}
+	        		if(delta>=1){
+	        			canv.animate(copt);
+	        		}
+	        	}
+	     };
+	    canv.animate(copt);
+	    return frame;
+	},
 	_view : undefined
 };
 
