@@ -51,8 +51,6 @@ var $app = {
 	},
 
 	preloaded : function(){
-		$ui.remove("progressBarFrame");
-		$ui.remove("progressBarLabel");
 		$app.layout.init(document.body, $app, $conf.layout_options||{});
 		if($app.onload)
 			$app.onload();
@@ -1396,6 +1394,8 @@ var $ui = {
 	    	    });
 				barLabel.innerHTML=labelPrefix+progress+"%";
 	    		if(progress>=100){
+	    			$ui.remove("progress-bar-frame");
+	    			$ui.remove("progress-bar-label");
 	    			if(onFinish){onFinish();}
 	    		}
 			};
