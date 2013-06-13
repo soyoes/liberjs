@@ -677,7 +677,7 @@ var __element = {
 				arg1 = "className";
 			if(arg2!=undefined){
 				if(this.tagName == "IMG" && arg1.toLowerCase()=="src"){
-					this[arg1] = $conf.image_path && arg2.indexOf("data:image")<0? $conf.image_path+arg2:arg2;
+					this[arg1] = $conf.image_path && arg2.indexOf("data:image")<0 && arg2.indexOf("http")!=0? $conf.image_path+arg2:arg2;
 				}else{
 					this[arg1] = arg2;
 				}
@@ -714,8 +714,10 @@ var __element = {
 							}
 						}
 					} 
-					if(arg1!="innerHTML"&&arg1!="className") //FIXME check if element has this property 
-						this.setAttribute(arg1,arg2);
+					if(!this.hasOwnProperty(arg1)){
+						this.setAttribute(arg1,arg2);	
+					}
+					//if(arg1!="innerHTML"&&arg1!="className") //FIXME check if element has this property 
 				}
 			}else{
 				//return this[arg1]?this[arg1]:this.getAttribute(arg1);
