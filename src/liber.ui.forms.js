@@ -265,14 +265,7 @@ var FormView = function(params){
 };
 
 $ui.formView = function(args){
-	//FIXME : delete do this in ui.ext
-	$utils.include("liber.ui.ext",function(args){
-		try{
-			form = new FormView(args);
-			form.draw();
-		}catch(ex){
-			
-		}
-	},args);
+	form = new FormView(args);
+	form.draw();
 };
 

@@ -174,6 +174,9 @@ var $history = {
 	change : function(e){
 		anc = history.state || location.hash;
 		console.log("history.change", anc);
+		e.stopPropagation(); 
+	    e.preventDefault();
+	    e.cancelBubble = false; 
 		if(!anc || anc==""){
 			window.location = window.location;			
 		}else {
@@ -948,75 +951,87 @@ for(var i in TAGS){
 	eval(["var " , TAGS[i].toUpperCase() , "= function(args,target){ return $e('" , TAGS[i],  "', args,target); };"].join(''));
 	eval(["var $" , TAGS[i] , "= function(args,target){ return $e('" , TAGS[i],  "', args,target); };"].join(''));
 }
+
 /**
- * options : {m:'male',f:'female'}
+ * checkbox / select-option / radiobox
+ * 
+ * @params options : {value:label, value:label ...}
+ * @params attrs : {
+ * 			id:xxxx ,//required 
+ * 			name:xxxx, //required name of form item
+ * 			multiple : 1|0 //1 :select(multi) || checkbox, 0:radio||select(single)
+ * 			optionClass: classname of li
+ * 			labelClass: classname of li.div
+ * 			drawOption:function(optLI,idx)
+ * 		}
+ * @params target //which dom to insert
+ * 
  * */
+var $sel = function(options,attrs,target){
+	//var opts = [];
+	if(!window._sel_handler)
+	window._sel_handler = function(e){
+		e = e || window.event;
+		var lb = e.target || e.srcElement;
+		var li = lb.tagName.toUpperCase()=="LI"?lb: lb.parentNode;
+		lb = li.childNodes[0];
+		var id = li.name;
+		var ipt = $id(id+"-input");
+		var tv = li.attr("value");
+		var isMulti = 1==li.attr("multiple");
+		if(isMulti){
+			if(li.className.match(/\son$/)){
+				li.className = li.className.replace(/\son$/g,'');
+				lb.className = lb.className.replace(/\son$/g,'');
+			}else{
+				li.className += " on";
+				lb.className += " on";
+			}
+			var vs = [];
+			$("#"+id+"-list .on",function(el){
+				if(el.tagName.toUpperCase()=="LI")
+					vs.push(el.getAttribute("value"));
+			});
+			ipt.value = vs.join(',');
+		}else{
+			if(tv == ipt.value){
+				ipt.value = "";
+			}else{
+				$("#"+id+"-list .on", function(el){el.className = el.className.replace(/\son$/,'');});
+				li.className+=" on";
+				li.childNodes[0].className+=" on";
+				ipt.value = tv;
+			}
+		}
+	};
+	var valuestr = attrs.value && attrs.multiple? "#"+ attrs.value.split(',').join('#,#') + "#" : attrs.value||"";
+	var isMulti = 1==attrs.multiple||true==attrs.multiple;
+	var container = $div({id:attrs.id},target);
+	var list = $ul({id:attrs.id+"-list"},container);
+	var idx = 0;
+	var drawOpt = attrs.drawOption;
+	for(var v in options){
+		var surfix = (isMulti)?((valuestr.indexOf('#'+v+"#")>=0)?" on":""): ((attrs.value == v)?" on":"");
+		var opt = $li([$div({className:attrs.labelClass?attrs.labelClass+surfix:surfix,html:options[v]})],list)
+			.attr({name:attrs.id, value:v,idx:idx, multiple:isMulti?1:0,className:attrs.optionClass?attrs.optionClass+surfix:surfix}).bind("click", window._sel_handler);
+		if(drawOpt)drawOpt(opt,idx);
+		idx++;
+	}
+	$input({name:attrs.name, id:attrs.id+"-input", type:'hidden',value:attrs.value?attrs.value:''},container);
+	return container;
+};
+
 var $radio = function(options,attrs,target){
-	var opts = [];
-	var _radio_handler = function(e){
-		e = e || window.event;
-		var tg = e.target || e.srcElement;
-		var id = tg.name.replace(/_options$/,"");
-		var ipt = $id(id);
-		var tv = tg.attr("value");
-		if(tv == ipt.value){
-			ipt.value = "";
-			tg.className="icons radio";
-		}else{
-			$("."+id+" .on", function(el){el.className = "icons radio";});
-			tg.className="icons radio on";
-			ipt.value = tv;
-		}
-	};
-	for(var v in options){
-		var opt = $div({className:'radio-option '+attrs.id},target);
-		var ra = $span({className:'icons radio ',name:attrs.id+"_options", value:v, html:options[v], onclick:_radio_handler},opt);
-		if(attrs.value == v){
-			//ra.checked = true;
-			ra.className="icons radio on ";
-		}
-		opts.push(opt);
-	}
-	opts.push($input({name:attrs.name, id:attrs.id, type:'hidden',className:attrs.className,value:attrs.value?attrs.value:''},target));
-	return opts;
+	delete attrs["multiple"];
+	return $sel(options,attrs,target);
 };
-window.RADIO = $radio;
-/**
- * options : {m:'male',f:'female'}
- * */
+//window.RADIO = $radio;
+
 var $checkbox = function(options,attrs,target){
-	var opts = [];
-	var valuestr = attrs.value? "#"+ attrs.value.split(',').join('#,#') + "#" : "";
-	var _checkbox_handler = function(e){
-		e = e || window.event;
-		var target = e.target || e.srcElement;
-		var id = target.name.replace(/_options$/,'');
-		var ipt = $id(id);
-		var vs = [];
-		target.className = target.className.indexOf("check on")>0?"icons check":"icons check on";
-		$("."+id+" .on",function(el){
-			vs.push(el.getAttribute("value"));
-		});
-		ipt.value = vs.join(',');
-	};
-	for(var v in options){
-		var opt = $div({className:'check-option '+attrs.id},target);
-		var chk = $span({className:'icons check '+attrs.id+"_options",name:attrs.id+"_options", value:v, html:options[v]},opt);
-		if(!attrs.onchange){
-			chk.bind("click",_checkbox_handler);
-		}else{
-			chk.onchange = attrs.onchange;
-		}
-		if(valuestr.indexOf('#'+v+"#")>=0){
-			chk.className="icons check on ";
-		}
-		//$span(options[v],opt);
-		opts.push(opt);
-	}
-	opts.push($input({name:attrs.name, id:attrs.id, type:'hidden',className:attrs.className,value:attrs.value?attrs.value:''},target));
-	return opts;
+	attrs["multiple"]=1;
+	return $sel(options,attrs,target);
 };
-window.CHECKBOX = $checkbox;
+//window.CHECKBOX = $checkbox;
 
 var $select = function(values,attrs,target){
 	if($browser.name=="MSIE" && $browser.version<9 && attrs.name ){
