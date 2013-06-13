@@ -713,11 +713,14 @@ var __element = {
 						        });
 							}
 						}
-					} 
+					}
+					/*
 					if(!this.hasOwnProperty(arg1)){
 						this.setAttribute(arg1,arg2);	
 					}
-					//if(arg1!="innerHTML"&&arg1!="className") //FIXME check if element has this property 
+					*/
+					if(arg1!="innerHTML"&&arg1!="className"&&arg1!="src") //FIXME check if element has this property
+						this.setAttribute(arg1,arg2);	
 				}
 			}else{
 				//return this[arg1]?this[arg1]:this.getAttribute(arg1);
