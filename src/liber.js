@@ -155,7 +155,7 @@ var $controller = {
 	},
 	enhance:function(view){
 		if(!view){
-			throw new Error("101 :now view to enhance");
+			throw new Error("101 :no view to enhance");
 			return;
 		}
 		if(!view.__enhanced){
@@ -1189,6 +1189,27 @@ var $ui = {
 		if (document.body != null)
 			xHeight = document.body.clientHeight;
 		return xHeight;
+	},
+	
+	rect : function(el){
+		var scrollTop = (document.documentElement && document.documentElement.scrollTop) || document.body.scrollTop;
+		var scrollLeft = (document.documentElement && document.documentElement.scrollLeft) || document.body.scrollLeft; 
+		if(el.getBoundingClientRect){
+			var r = el.getBoundingClientRect();//Read only
+			return {top:r.top+scrollTop, width:r.width, left:r.left+scrollLeft, height: r.height};
+		}	
+			
+		var _x = 0;
+	    var _y = 0;
+	    var w = el.clientWidth;
+	    var h = el.clientHeight;
+	    while( el && !isNaN( el.offsetLeft ) && !isNaN( el.offsetTop ) ) {
+	        _x += el.offsetLeft - el.scrollLeft;
+	        _y += el.offsetTop - el.scrollTop;
+	        el = el.offsetParent;
+	    }
+	    //offsetWidth (includes padding...)
+	    return { top: _y+scrollTop, left: _x+scrollLeft,width:w,height:h};			
 	},
 
 	preventDefault : function(e) {
