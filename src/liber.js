@@ -1050,31 +1050,33 @@ window._layers = [];
 
 function $(query,each,thisLayer){
 	var res = [];
-	if(!thisLayer && query.indexOf(' ')<0){
+	if(!thisLayer && query.indexOf(' ')<0){/* querySelectorAll is not as fast as we wish.*/
 		if(query.charAt(0)=="#")
 			return document.getElementById(query.replace("#",""));
 		if(query.charAt(0)=="." && document.getElementsByClassName)
 			res = document.getElementsByClassName(query.replace(".",""));
 		if(/^[a-zA-Z]+$/.test(query))
 			res = document.getElementsByTagName(query);
-	}/* querySelectorAll is not as fast as we wish.*/
-	else{
+	}else{
 		query=thisLayer?"#layer_"+window._layerIDX+" "+query:query;
 		var qs = query.trim().split(" ");
 		var lastq = qs[qs.length-1];
 		res = document.querySelectorAll(query);
 		if(lastq.charAt(0)=="#")return res[0];
 	}
+	var arr=[], l=res.length>>>0;
+	for( ; l--; arr[l]=res[l] );//We HAVE TO change NodesList to Array. or nodelist will change it self dynamically 
 	if(each){
-		for(var i in res){
-			var dm = res[i];
+		var len = arr.length;
+		for(var i=0;i<len;i++){
+			var dm=arr[i];
 			var type = typeof(dm);
 			if(type != "string" && type!="function" && type!="number"){
-				each(dm);
+				each(dm,i);
 			}
 		}
 	}
-	return res;
+	return arr;
 }
 function $id(domid){return document.getElementById(domid);}
 
