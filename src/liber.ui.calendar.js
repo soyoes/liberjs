@@ -15,6 +15,10 @@ var Calendar = function(attrs,onclick){
 		e=e||window.event;
 		var cell=e.target||e.srcElement;
 		var date = cell.attr("date");
+		var parts = date.split("-");
+		var month = (cell.className.indexOf("lastmonth")>0)? parseInt(parts[1])-2:
+					((cell.className.indexOf("nextmonth")>0) ? parseInt(parts[1]) : parseInt(parts[1])-1);
+		date = new Date(parts[0],month,parts[2]);
 		_this._onclick(date);
 	};
 
