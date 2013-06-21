@@ -643,7 +643,7 @@ var __element = {
 	css : function(arg1,arg2){
 		if(typeof(arg1)=="string"){
 			if(arg2!=undefined){
-				if(arg1.indexOf("background")>=0 && arg2.indexOf("url(")>=0 && $conf.image_path && arg2.indexOf("data:image")<0){
+				if(arg1.indexOf("background")>=0 && arg2.indexOf("url(")>=0 && $conf.image_path && arg2.indexOf("data:image")<0 && arg2.indexOf("http")<0){
 					arg2 = arg2.replace("url(", "url("+$conf.image_path);
 				}
 				this.style[arg1] = arg2;
