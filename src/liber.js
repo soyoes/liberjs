@@ -105,7 +105,6 @@ var $app = {
 				$app._histories.push($this);
 				view.params = params;
 				if(view.onload){
-					console.log("view.onload");
 					view.onload(params);
 				}else{
 					view.loaded();
@@ -121,7 +120,6 @@ var $app = {
 			$app.closeView($app.view);
 			return;
 		}
-		console.log(view);
 		$app.layout.drawView(view);
 	},
 	closeView : function(view){
@@ -137,7 +135,7 @@ var $app = {
 		if(view.onclose)
 			view.onclose();
 		$app.layout.closeView(view);
-		console.log($app._histories,$this);
+		//console.log($app._histories,$this);
 		
 	}
 };
@@ -173,7 +171,7 @@ var $history = {
 	stack : [],
 	change : function(e){
 		anc = history.state || location.hash;
-		console.log("history.change", anc);
+		//console.log("history.change", anc);
 		e.stopPropagation(); 
 	    e.preventDefault();
 	    e.cancelBubble = false; 
@@ -182,11 +180,10 @@ var $history = {
 		}else {
 			if($history.stack.length>0){
 				last = $history.stack.length>1 ? $history.stack[$history.stack.length-2] : null;
-				console.log("last", last);
+				//console.log("last", last);
 				if(last && last == anc){
 					$history.stack.pop();
 					$history.stack.pop();
-					console.log("remove layer");
 					window._layers.pop();
 					$ui.removeLayer();
 				}else{
