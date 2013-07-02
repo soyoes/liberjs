@@ -1,5 +1,3 @@
-$utils.package("liber.layout.overlay");
-
 /*
  * @delegates:
  * 		smInitCell(cell,row,col)

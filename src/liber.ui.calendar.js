@@ -1,5 +1,3 @@
-$utils.package("liber.ui.calendar");
-
 
 var Calendar = function(attrs,onclick){
 	var d =new Date();

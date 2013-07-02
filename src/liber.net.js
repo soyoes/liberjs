@@ -1,5 +1,3 @@
-$utils.package("liber.net");
-
 var SocketKits = function(args){/*FIXME*/
 	if(!window.WebSocket)
 		return false;

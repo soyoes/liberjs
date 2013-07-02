@@ -1,5 +1,3 @@
-$utils.package("liber.layout.grids");
-
 /*
  * @delegates:
  * 		smInitCell(cell,row,col)

@@ -1,5 +1,3 @@
-$utils.package("liber.mapkit");
-
 var MapKits = function(){
 
 	this.geo = undefined;

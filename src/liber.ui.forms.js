@@ -1,6 +1,3 @@
-$utils.package("liber.ui.forms");
-
-
 String.prototype.validate = function(type){ 
 	parts = [];
 	if(type.indexOf("len:")==0 || type.indexOf("id:")==0) {

@@ -38,7 +38,9 @@ var $app = {
 		
 		var progbar = $ui.progressBar(document.body, $conf.modules.length+images.length, {
 			update:function(progress, f){console.log("Preload : ",progress+"%",f);},
-			finish:function(progress, f){console.log("Preload DONE");$app.preloaded();},
+			finish:function(progress, f){console.log("Preload DONE");
+			//$app.preloaded();
+			},
 		});
 		var loadFunc = function(v){progbar.update(v);};
 		for(var i in $conf.modules){
@@ -390,45 +392,31 @@ var $utils = {
 			src = $conf.liber_path+src;
 		var jsId = src.split("/");
 		jsId = jsId[jsId.length-1].replace(/\./g,"_");
-		var packageName = jsId.replace("_js","");
 		if(!$id(jsId)){
+			var cb = callback;
+			var cbprm = params;
+			var included = function(e){
+				if(!$utils.__included)
+					$utils.__included = [];
+				e=e||window.event;
+				var t=e.target||e.srcElement;
+				console.log("found : ",t.id);
+				//TODO handling error
+				$utils.__included.push(t.id);
+				if(cb)cb(cbprm);
+			};
+			
 			var se = document.createElement("script");
 			se.id= jsId;
-			se.src = src;
+			se.type = "text/javascript";
+			se.bind({
+				"load": included,
+				"error": included
+			});
 			document.head.appendChild(se);
-			if(!$utils.__include)
-				$utils.__include = {};
-			$utils.__include[jsId] = {
-				"src" : se.src,
-				"interval" : setInterval(function(){
-					if($utils.included(packageName)){
-						clearInterval($utils.__include[jsId].interval);
-						if($utils.__include[jsId].callback){
-							var cb = $utils.__include[jsId].callback;
-							if(typeof(cb)=="function")
-								cb($utils.__include[jsId].params);
-							else if(typeof(cb)=="string"){
-								cb = window[cb];
-								if(cb)
-									cb($utils.__include[jsId].params);
-							}
-						}
-						//console.log("Included-times",$utils.__include[jsId].times+1);
-						delete $utils.__include[jsId];
-					}else{
-						$utils.__include[jsId].times = $utils.__include[jsId].times+1;
-						if($utils.__include[jsId].times>50){
-							clearInterval($utils.__include[jsId].interval);
-							console.log("Include timeover", $utils.__include[jsId].src);
-							delete $utils.__include[jsId];
-						}
-					}
-				},10),
-				"callback" : callback,
-				"times" : 0,
-				"params":params
-			};
+			se.src = src;
 		}else{
+			//$utils.package(jsId);
 			if(callback){
 				if(typeof(callback)=="function")
 					callback(params);
@@ -530,14 +518,6 @@ var $utils = {
 			min = 1;
 		}
 		return Math.floor(Math.random() * (max - min + 1)) + min;
-	},
-	"package" : function(str){
-		__packages = __packages.split(",");
-		__packages.push(str.replace(/_/g,"."));
-		__packages = __packages.join(",");
-	} ,
-	"included" : function(str){
-		return __packages.indexOf(str.replace(/_/g,"."))>=0;
 	}
 };
 
@@ -1373,13 +1353,13 @@ var $ui = {
 		var ProgressBar = function(target,max,opts){
 			opts = opts||{};
 			var barWidth = opts.width || 240;
-			var barHeight = opts.height || 18;
+			var barHeight = opts.height || 3;
 			var maxValue = max;
 			var value = 0;
 			var labelPrefix = opts.label || "Loading ... ";
-			var barFrame = $div({id:"progress-bar-frame"},target).css({margin:"300px auto auto auto",position:"relative",width:barWidth+"px",height:barHeight+"px",padding:"0px",border:"3px double #666",borderRadius:"5px",fontSize:"0pt"});
+			var barFrame = $div({id:"progress-bar-frame"},target).css({margin:"300px auto auto auto",position:"relative",width:barWidth+"px",height:barHeight+"px",padding:"2px",border:"1px solid #666",borderRadius:"5px",fontSize:"0pt"});
 			var canv = $canvas({width:barWidth,height:barHeight},barFrame);
-			var barLabel = $span({id:"progress-bar-label",html:labelPrefix+"0%"},document.body).css(opts.labelStyle||{position:"absolute",top:310+barHeight+"px",width:"100%",height:"30px",zIndex:100,color:"#000",textAlign:"center",fontFamily:"verdana"});
+			var barLabel = $span({id:"progress-bar-label",html:labelPrefix+"0%"},document.body).css(opts.labelStyle||{position:"absolute",top:310+barHeight+"px",width:"100%",height:"20px",zIndex:100,color:"#333",textAlign:"center",fontFamily:"impact"});
 			var ctx = canv.getContext("2d");
 			var onUpdate = opts.update||null;
 			var onFinish = opts.finish||null;
@@ -1395,16 +1375,8 @@ var $ui = {
 	    	        duration:300,
 	    	        step:function(el,delta){
 	    	        	var v=el.attr("value");
-	    	        	//ctx.clearRect(0,0,barWidth,barHeight);
 	    	        	var w = delta*v/100*barWidth;
 	    	           	ctx.fillRect(0, 0, w, barHeight);
-	    	           	ctx.beginPath();
-	    	           	for(var j=0;j<=w/20;j++){
-	    	           		ctx.moveTo(j*20+10, -5);
-	    	           		ctx.lineTo(j*20,barHeight+5);
-	    	           	}
-	    	           	ctx.closePath();
-	    	           	ctx.stroke();
 	    	        }
 	    	    });
 				barLabel.innerHTML=labelPrefix+progress+"%";
