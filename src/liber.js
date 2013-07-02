@@ -392,6 +392,7 @@ var $utils = {
 			src = $conf.liber_path+src;
 		var jsId = src.split("/");
 		jsId = jsId[jsId.length-1].replace(/\./g,"_");
+		var time = new Date().getTime();
 		if(!$id(jsId)){
 			var cb = callback;
 			var cbprm = params;
@@ -414,7 +415,7 @@ var $utils = {
 				"error": included
 			});
 			document.head.appendChild(se);
-			se.src = src.indexOf("liber.")>=0 ? src+"?version=1":src;
+			se.src = src.indexOf("liber.")>=0 ? src+"?v="+time:src;
 		}else{
 			//$utils.package(jsId);
 			if(callback){
