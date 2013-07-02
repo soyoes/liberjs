@@ -38,9 +38,7 @@ var $app = {
 		
 		var progbar = $ui.progressBar(document.body, $conf.modules.length+images.length, {
 			update:function(progress, f){console.log("Preload : ",progress+"%",f);},
-			finish:function(progress, f){console.log("Preload DONE");
-			//$app.preloaded();
-			},
+			finish:function(progress, f){console.log("Preload DONE");$app.preloaded();},
 		});
 		var loadFunc = function(v){progbar.update(v);};
 		for(var i in $conf.modules){
