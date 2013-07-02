@@ -414,7 +414,7 @@ var $utils = {
 				"error": included
 			});
 			document.head.appendChild(se);
-			se.src = src;
+			se.src = src.indexOf("liber.")>=0 ? src+"?version=1":src;
 		}else{
 			//$utils.package(jsId);
 			if(callback){
