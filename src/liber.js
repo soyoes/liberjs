@@ -26,9 +26,9 @@ var $app = {
 	_histories : [],
 	
 	start : function(start_view){
-		__default = {
+		var __default = {
 			modules : [],
-			liber_path : "/js/",
+			liber_path : "/js/"
 		};
 		$app.start_view = start_view;
 		for(var i in __default){
@@ -41,7 +41,7 @@ var $app = {
 		
 		var progbar = $ui.progressBar(document.body, $conf.modules.length+images.length, {
 			update:function(progress, f){console.log("Preload : ",progress+"%",f);},
-			finish:function(progress, f){console.log("Preload DONE");$app.preloaded();},
+			finish:function(progress, f){console.log("Preload DONE");$app.preloaded();}
 		});
 		var loadFunc = function(v){progbar.update(v);};
 		for(var i in $conf.modules){
@@ -54,7 +54,8 @@ var $app = {
 	},
 
 	preloaded : function(){
-		$app.layout.init(document.body, $app, $conf.layout_options||{});
+		if($app.layout)
+			$app.layout.init(document.body, $app, $conf.layout_options||{});
 		if($app.onload)
 			$app.onload();
 		else{
@@ -398,13 +399,20 @@ var $utils = {
 			var cb = callback;
 			var cbprm = params;
 			var included = function(e){
+				
 				if(!$utils.__included)
 					$utils.__included = [];
 				e=e||window.event;
 				var t=e.target||e.srcElement;
+				
+				if(t.readyState == "loading")
+					return;
+				console.log("load "+t.src);
+				
 				if(e.type=="error"){
 					console.log("ERROR : Failed to load "+t.src);
 				}
+				t.onload = t.onreadystatechange = null;
 				$utils.__included.push(t.id);
 				if(cb)cb(cbprm);
 			};
@@ -412,12 +420,16 @@ var $utils = {
 			var se = document.createElement("script");
 			se.id= jsId;
 			se.type = "text/javascript";
-			se.bind({
-				"load": included,
-				"error": included
-			});
-			document.head.appendChild(se);
-			se.src = src.indexOf("liber.")>=0 ? src+"?v="+time:src;
+			se.onload = se.onreadystatechange = included;
+			se.onerror = included;
+			var head = document.head?document.head: document.getElementsByTagName('head')[0];
+			if(document.head){
+				head.appendChild(se);
+				se.src = src.indexOf("liber.")>=0 ? src+"?v="+time:src;
+			}else{
+				se.src = src.indexOf("liber.")>=0 ? src+"?v="+time:src;
+				head.appendChild(se);
+			}
 		}else{
 			//$utils.package(jsId);
 			if(callback){
@@ -745,12 +757,10 @@ var __element = {
 	},
 	
 	height : function(){
-		var el = this;
-		return Math.max(el.clientHeight||0,el.scrollHeight||0,el.offsetHeight||0);
+		return $ui.height(this);
 	},
-	width : function(el){
-		var el = this;
-		return Math.max(el.clientWidth||0,el.scrollWidth||0,el.offsetWidth||0);
+	width : function(){
+		return $ui.width(this);
 	},
 	
 	/*
@@ -849,7 +859,7 @@ var __element = {
 };
 
 if($browser.name=="MSIE" &&  $browser.version<9){
-	$utils.include("liber.ie8", "ie8_enhance");
+	$utils.include("liber.ie8");
 }else{
 	$utils.extend(Element.prototype,__element);
 }
@@ -1179,6 +1189,13 @@ var $ui = {
 	    //offsetWidth (includes padding...)
 	    return { top: _y+scrollTop, left: _x+scrollLeft,width:w,height:h};			
 	},
+	
+	height : function(el){
+		return el? Math.max(el.clientHeight||0,el.scrollHeight||0,el.offsetHeight||0):0;
+	},
+	width : function(el){
+		return el?Math.max(el.clientWidth||0,el.scrollWidth||0,el.offsetWidth||0):0;
+	},
 
 	preventDefault : function(e) {
         e = e || window.event;
@@ -1363,25 +1380,29 @@ var $ui = {
 			var barFrame = $div({id:"progress-bar-frame"},target).css({margin:"300px auto auto auto",position:"relative",width:barWidth+"px",height:barHeight+"px",padding:"2px",border:"1px solid #666",borderRadius:"3px",fontSize:"0pt"});
 			var canv = $canvas({width:barWidth,height:barHeight},barFrame);
 			var barLabel = $span({id:"progress-bar-label",html:labelPrefix+"0%"},document.body).css(opts.labelStyle||{position:"absolute",top:310+barHeight+"px",width:"100%",height:"20px",zIndex:100,color:"#333",textAlign:"center",fontFamily:"impact"});
-			var ctx = canv.getContext("2d");
+			var ctx = canv.getContext? canv.getContext("2d"):null;
 			var onUpdate = opts.update||null;
 			var onFinish = opts.finish||null;
-		    ctx.fillStyle = opts.bgColor|| "#666";
-		    ctx.strokeStyle = opts.strokeColor||"#CCC";
-		    ctx.lineWidth = 10;
+			if(ctx){
+				ctx.fillStyle = opts.bgColor|| "#666";
+			    ctx.strokeStyle = opts.strokeColor||"#CCC";
+			    ctx.lineWidth = 10;
+			}
 		    this.update = function(param){
 		    	value++;
 				var progress = parseInt(value*100/maxValue);
 				if(onUpdate){onUpdate(progress,param);}
-				canv.attr({"value":progress});
-				canv.animate({
-	    	        duration:300,
-	    	        step:function(el,delta){
-	    	        	var v=el.attr("value");
-	    	        	var w = delta*v/100*barWidth;
-	    	           	ctx.fillRect(0, 0, w, barHeight);
-	    	        }
-	    	    });
+				if(ctx){
+					canv.attr({"value":progress});
+					canv.animate({
+		    	        duration:300,
+		    	        step:function(el,delta){
+		    	        	var v=el.attr("value");
+		    	        	var w = delta*v/100*barWidth;
+		    	           	ctx.fillRect(0, 0, w, barHeight);
+		    	        }
+		    	    });
+				}
 				barLabel.innerHTML=labelPrefix+progress+"%";
 	    		if(progress>=100){
 	    			$ui.remove("progress-bar-frame");

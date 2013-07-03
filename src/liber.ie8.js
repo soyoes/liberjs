@@ -175,9 +175,10 @@ if(!Element){/*For IE~8*/
             var _createElement = document.createElement;
             document.createElement = function(tag){
             	var _elem = _createElement(tag);
-                eval("_elem." + name + " = fn");
+                //eval("_elem." + name + " = fn");
+            	_elem[name]=fn;
                 return _elem;
-            }
+            };
 
             var _getElementById = document.getElementById;
 
@@ -186,7 +187,7 @@ if(!Element){/*For IE~8*/
             	if(_elem)
             		eval("_elem." + name + " = fn");
                 return _elem;
-            }
+            };
 
             var _getElementsByTagName = document.getElementsByTagName;
             document.getElementsByTagName = function(tag){
@@ -194,7 +195,7 @@ if(!Element){/*For IE~8*/
                 for(var _elem=0;_elem<_arr.length;_elem++)
                 	eval("_arr[_elem]." + name + " = fn");
                 return _arr;
-            }
+            };
             
             if(document.getElementByClassName){
             	var _getElementsByClassName = document.getElementsByClassName;
@@ -203,7 +204,7 @@ if(!Element){/*For IE~8*/
                     for(var _elem=0;_elem<_arr.length;_elem++)
                     	eval("_arr[_elem]." + name + " = fn");
                     return _arr;
-                }
+                };
             }
             
             var _querySelectorAll = document.querySelectorAll;
@@ -212,13 +213,10 @@ if(!Element){/*For IE~8*/
                 for(var _elem=0;_elem<_arr.length;_elem++)
                 	eval("_arr[_elem]." + name + " = fn");
                 return _arr;
-            }
-            
-            
+            };
         }
     };
 }
-
 
 function ie8_enhance(){
 	Element.extend("addClass",__element.addClass);
@@ -230,12 +228,16 @@ function ie8_enhance(){
     //Element.extend("html",__html);
     Element.extend("show",__element.show);
     Element.extend("hide",__element.hide);
+    /*
+    Element.extend("height",__element.height);
+    Element.extend("width",__element.width);
+    */
     
     var $input = function(args, target){
-		ipt = null;
+		var ipt = null;
 		if(args.name){
-			tp = args.type?args.type:"text";
-			clickAction = args.onclick?" onclick='javascript::"+args.onclick+";'":"";
+			var tp = args.type?args.type:"text";
+			var clickAction = args.onclick?" onclick='javascript::"+args.onclick+";'":"";
 			ipt = document.createElement(["<input name='",args.name,"' type='",tp,"' ",clickAction,">"].join(""));
 			if(args.name)delete args["name"];
 			if(args.types)delete args["type"];
@@ -253,7 +255,7 @@ function ie8_enhance(){
 
 	var $textarea = function(args, target){
 		if(args.name){
-			ta = document.createElement("<textarea name='"+args.name+"'>");
+			var ta = document.createElement("<textarea name='"+args.name+"'>");
 			ta.attr(args);
 			if(target)
 				target.appendChild(ta);
@@ -264,5 +266,5 @@ function ie8_enhance(){
 	window.TEXTAREA = $textarea;
 }
 
-
+ie8_enhance();
 
