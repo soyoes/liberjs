@@ -399,8 +399,9 @@ var $utils = {
 					$utils.__included = [];
 				e=e||window.event;
 				var t=e.target||e.srcElement;
-				console.log("found : ",t.id);
-				//TODO handling error
+				if(e.type=="error"){
+					console.log("ERROR : Failed to load "+t.src);
+				}
 				$utils.__included.push(t.id);
 				if(cb)cb(cbprm);
 			};
@@ -1356,7 +1357,7 @@ var $ui = {
 			var maxValue = max;
 			var value = 0;
 			var labelPrefix = opts.label || "Loading ... ";
-			var barFrame = $div({id:"progress-bar-frame"},target).css({margin:"300px auto auto auto",position:"relative",width:barWidth+"px",height:barHeight+"px",padding:"2px",border:"1px solid #666",borderRadius:"5px",fontSize:"0pt"});
+			var barFrame = $div({id:"progress-bar-frame"},target).css({margin:"300px auto auto auto",position:"relative",width:barWidth+"px",height:barHeight+"px",padding:"2px",border:"1px solid #666",borderRadius:"3px",fontSize:"0pt"});
 			var canv = $canvas({width:barWidth,height:barHeight},barFrame);
 			var barLabel = $span({id:"progress-bar-label",html:labelPrefix+"0%"},document.body).css(opts.labelStyle||{position:"absolute",top:310+barHeight+"px",width:"100%",height:"20px",zIndex:100,color:"#333",textAlign:"center",fontFamily:"impact"});
 			var ctx = canv.getContext("2d");
