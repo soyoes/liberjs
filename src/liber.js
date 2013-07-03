@@ -16,12 +16,15 @@ var $browser = (function(){
     M= M? [M[1], M[2]]: [N, navigator.appVersion, 0];
     var isSM = ua.match(/(iPhone|iPod|Android)/i);//TODO : blackberry
     //if(isSM){$utils.include("liber.sm");}
-    return {name:M[0], version:parseInt(M[1]), device:isSM?"smartphone":"pc"};
+    var browser = {name:M[0], version:parseInt(M[1]), device:isSM?"smartphone":"pc"};
+    if(!console){window.console={log:function(v){}};}
+    return browser;
 })();
 var $app = {
 	_view : undefined,
 	layers : [],
 	_histories : [],
+	
 	start : function(start_view){
 		__default = {
 			modules : [],
