@@ -17,6 +17,8 @@ var $browser = (function(){
     var isSM = ua.match(/(iPhone|iPod|Android)/i);//TODO : blackberry
     //if(isSM){$utils.include("liber.sm");}
     var browser = {name:M[0], version:parseInt(M[1]), device:isSM?"smartphone":"pc"};
+    if(browser.name=="MSIE"&&browser.version<9&&document.addEventListener)
+    	browser.version = 9;
     if(!console){window.console={log:function(v){}};}
     return browser;
 })();
