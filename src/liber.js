@@ -26,7 +26,7 @@ var $browser = (function(){
     if(browser.name=="MSIE"&&ua.indexOf("Trident/5.0")>0){
     	browser.version = 9;	
     	if($conf.redirect_ie9)
-    		href.location=$conf.redirect_ie9;
+    		location.href=$conf.redirect_ie9;
     }
     
     if(!console){window.console={log:function(v){}};}
