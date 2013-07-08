@@ -40,8 +40,8 @@ var $app = {
 		var images = $conf.preload_images?$conf.preload_images:[];
 		
 		var progbar = $ui.progressBar(document.body, $conf.modules.length+images.length, {
-			update:function(progress, f){console.log("Preload : ",progress+"%",f);},
-			finish:function(progress, f){console.log("Preload DONE");$app.preloaded();}
+			update:function(progress, f){/*console.log("Preload : ",progress+"%",f);*/},
+			finish:function(progress, f){/*console.log("Preload DONE");*/$app.preloaded();}
 		});
 		var loadFunc = function(v){progbar.update(v);};
 		for(var i in $conf.modules){
@@ -139,7 +139,7 @@ var $app = {
 		if(view.onclose)
 			view.onclose();
 		$app.layout.closeView(view);
-		//console.log($app._histories,$this);
+		////console.log($app._histories,$this);
 		
 	}
 };
@@ -169,13 +169,13 @@ var $controller = {
 	}	
 };
 
-/*console.log("browser",$browser.name,"-",$browser.version);*/
+/*//console.log("browser",$browser.name,"-",$browser.version);*/
 
 var $history = {
 	stack : [],
 	change : function(e){
 		anc = history.state || location.hash;
-		//console.log("history.change", anc);
+		////console.log("history.change", anc);
 		e.stopPropagation(); 
 	    e.preventDefault();
 	    e.cancelBubble = false; 
@@ -184,7 +184,7 @@ var $history = {
 		}else {
 			if($history.stack.length>0){
 				last = $history.stack.length>1 ? $history.stack[$history.stack.length-2] : null;
-				//console.log("last", last);
+				////console.log("last", last);
 				if(last && last == anc){
 					$history.stack.pop();
 					$history.stack.pop();
@@ -407,10 +407,10 @@ var $utils = {
 				
 				if(t.readyState == "loading")
 					return;
-				console.log("load "+t.src);
+				//console.log("load "+t.src);
 				
 				if(e.type=="error"){
-					console.log("ERROR : Failed to load "+t.src);
+					//console.log("ERROR : Failed to load "+t.src);
 				}
 				t.onload = t.onreadystatechange = null;
 				$utils.__included.push(t.id);
@@ -675,7 +675,7 @@ var __element = {
 							this.setAttribute(arg1,arg2);
 							if(!this.value || this.value==""){
 								this.value = arg2;
-								//console.log("value-",this.value);
+								////console.log("value-",this.value);
 								this.style.color = "#999";
 								this.attachEvent("onfocus",function(e){
 									 e = e||window.event;
@@ -822,7 +822,7 @@ var __element = {
 				if(opts.style=="easeInOut") delta = $deltas.easeInOut(delta);
 			}
 			var delta_value = delta(progress);
-			console.log(time,timePassed, progress, delta_value);
+			//console.log(time,timePassed, progress, delta_value);
 			opts.step(ele, delta_value);
 			if(progress>=1){
 				cancel(animeID);
@@ -833,7 +833,7 @@ var __element = {
 		};
 		
 		var animeID = animeFrame(fstep);
-		console.log("anime",animeID);
+		//console.log("anime",animeID);
 		*/
 		
 		
@@ -882,7 +882,7 @@ var $e = function(type, args, target){
 					break;
 			}
 		}else if($utils.isArray(args)){
-			//console.log("draw array");
+			////console.log("draw array");
 			for(var i in args){
 				if(args[i]!=null){
 					if($utils.isElement(args[i])){
@@ -896,12 +896,12 @@ var $e = function(type, args, target){
 									thisEl.appendChild(res[_i]);
 							}
 						}else if($utils.isElement(res)){
-							//console.log(res,_el);
+							////console.log(res,_el);
 							thisEl.appendChild(res);
 						}
 						_el = thisEl;
 					}else{
-						//console.log("ERROR : can not append child ",args[i]);
+						////console.log("ERROR : can not append child ",args[i]);
 					}
 				}
 			}
@@ -1558,7 +1558,7 @@ var $http = {
   			}
   		}
   		method =method.toUpperCase();  
-  		console.log('http send ',method,url,userdata);
+  		//console.log('http send ',method,url,userdata);
   		xhr.open(method,url,true);
   		if(method == 'POST' || method == 'PUT' || method == 'DELETE'){
   			xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
@@ -1586,5 +1586,5 @@ var $http = {
 };
 
 var _viewer_id = $utils.getCookie("tid");
-//console.log("_viewer_id",_viewer_id);
+////console.log("_viewer_id",_viewer_id);
 
