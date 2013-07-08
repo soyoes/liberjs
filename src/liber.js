@@ -17,13 +17,12 @@ var $browser = (function(){
     var isSM = ua.match(/(iPhone|iPod|Android)/i);//TODO : blackberry
     //if(isSM){$utils.include("liber.sm");}
     var browser = {name:M[0], version:parseInt(M[1]), device:isSM?"smartphone":"pc"};
-    
-    with(document.createElement("b")){var id=7;while(innerHTML="<!--[if gt IE "+ (++id)+"]>1<![endif]-->",innerHTML>0);browser.version=id>8?+id:0}
     /*
-    if(browser.name=="MSIE"&&browser.version<9&&document.addEventListener)
+     * with(document.createElement("b")){id=7;while(innerHTML="<!--[if gt IE "+ (++id)+"]>1<![endif]-->",innerHTML>0);browser.version=id>8?+id:0}
+    */
+    if(browser.name=="MSIE"&&browser.version<9&&_IE_VER&&9==_IE_VER)
     	browser.version = 9;
     
-    */
     if(!console){window.console={log:function(v){}};}
     return browser;
 })();
