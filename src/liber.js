@@ -23,6 +23,8 @@ var $browser = (function(){
     	browser.version = 9;
     
     */
+    if(browser.name=="MSIE"&&ua.indexOf("Trident/5.0")>0)
+    	browser.version = 9;
     
     if(!console){window.console={log:function(v){}};}
     return browser;
