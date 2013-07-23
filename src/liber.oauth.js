@@ -1,17 +1,53 @@
 /**
+ * @author Soyoes
  * 
  * @Confs
  * $conf.oauth_callback_path = "/test";
  * 
  * @Delegate methods
- * 
  * this.makeTokenParams()	//required
  * this.tokenMethod()	//optional
  * this.makeCodeParams() 	//optional
- * 
  * this.apiWrapper (data) //optional
  * 
+ * 
+ * @example
+ * 
+ * 		$gg.init({
+			app_id : "513500027229-g7i4gv9tqmcp7pt4bvq28suc1ugejg4s.apps.googleusercontent.com",
+			app_key : "GOOGLE_APP_KEY"
+		});
+		$fb.init({
+			app_id : "193560298133",
+			app_sec : "FB_SECRET_KEY",
+		});
+		
+		....
+		
+		$id("my_fb_btn").bind("click", $fb.me);
+		$id("my_gg_btn").bind("click", $gg.me);
+ * 
+ * 
  * */
+var _oauth_platforms = {
+	"facebook" : {
+		token_url : "https://www.facebook.com/dialog/oauth",
+		api_url : "https://graph.facebook.com/",
+		prefix : "fb"
+	},
+	"google" : {
+		token_url : "https://accounts.google.com/o/oauth2/auth",
+		api_url : "https://www.googleapis.com/plus/v1/",
+		scope : "https://www.googleapis.com/auth/plus.me",
+		prefix : "gg"
+	},
+	"linkedin" : {
+		code_url : "https://www.linkedin.com/uas/oauth2/authorization",
+		token_url : "https://www.linkedin.com/uas/oauth2/accessToken",
+		api_url : "http://api.linkedin.com/v1/",
+		prefix : "ln"
+	}
+};
 
 var OAuthClient = function(platform){
 	this.platform = platform;
@@ -26,7 +62,7 @@ var OAuthClient = function(platform){
 		this.token_url = def.token_url;
 		this.api_url = def.api_url;
 		this.prefix = def.prefix;
-		this.host = location.port!=80? location.protocol + '//' + location.hostname+":"+location.port:
+		this.host = location.port!=""&&location.port!=80? location.protocol + '//' + location.hostname+":"+location.port:
 					location.protocol + '//' + location.hostname;
 		this.path = $conf.oauth_callback_path ? $conf.oauth_callback_path:"/";
 		this.oauth_code_callback = this.host+this.path+"?oauth_callback="+this.prefix+"_oauth";
@@ -47,24 +83,28 @@ var OAuthClient = function(platform){
 		this.token = localStorage[prf+"_token"]||null;
 		var paramStr = location.href.indexOf("#")>0?location.href.split("#")[1]:location.href;
 		var params = $utils.unpackParams(paramStr);
-		console.log("params",params);
 		if(!params.access_token && params.code){
 			//Get token
 			_this.code = params.code;
 			return _this.getToken();
 		}else if(params.access_token){
 			//Do request with token
-			_this.token = params.access_token;
-			var expAt = parseInt(new Date().getTime()/1000)+parseInt(params.expires_in);
-			localStorage[prf+"_token"] = params.access_token;
-			localStorage[prf+"_exp"] = expAt;
-			if(localStorage[prf+"_call"]){
-				var met = localStorage[prf+"_method"];
-				if(met)
-					_this[met](localStorage[prf+"_call"]);
-				localStorage.removeItem(prf+"_call");
-				localStorage.removeItem(prf+"_method");
+			if(_this.validateToken && !_this.validated){
+				return _this.validateToken(params.access_token);
+			}else{
+				_this.token = params.access_token;
+				var expAt = parseInt(new Date().getTime()/1000)+parseInt(params.expires_in);
+				localStorage[prf+"_token"] = params.access_token;
+				localStorage[prf+"_exp"] = expAt;
+				if(localStorage[prf+"_call"]){
+					var met = localStorage[prf+"_method"];
+					if(met)
+						_this[met](localStorage[prf+"_call"]);
+					localStorage.removeItem(prf+"_call");
+					localStorage.removeItem(prf+"_method");
+				}
 			}
+			
 		}
 	};
 	
@@ -110,13 +150,12 @@ var OAuthClient = function(platform){
 		}
 		
 		data = (typeof(data)=="function"||!data)?{}:data;
-		console.log(_this.token,_this.api_url);
+		//console.log(_this.token,_this.api_url);
 		data.access_token = _this.token;
 		if(_this.apiWrapper)_this.apiWrapper(data);
 		success = (typeof(data)=="function")?data:success;
 		var func =$http[method.toLowerCase()];
 		func(_this.api_url+uri,data,function(res){
-			console.log("oauth res",res);
 			if(success)
 				success(res);
 		});
@@ -183,6 +222,29 @@ var $gg = new OAuthClient("google");
 $gg.makeTokenParams = function(){
 	return "?client_id="+this.app_id+"&response_type=token&scope="+this.scope;
 };
+$gg.validateToken = function(tk){
+	var _this = this;
+	$http.get("https://www.googleapis.com/oauth2/v1/tokeninfo?access_token="+tk,{},function(res){
+		if(res.error){
+			//TODO 
+			//console.log(res.error);
+		}else{
+			_this.validated = true;
+			_this.token = tk;
+			var expAt = parseInt(new Date().getTime()/1000)+parseInt(res.expires_in);
+			var prf = _this.prefix;
+			localStorage[prf+"_token"] = tk;
+			localStorage[prf+"_exp"] = expAt;
+			if(localStorage[prf+"_call"]){
+				var met = localStorage[prf+"_method"];
+				if(met)
+					_this[met](localStorage[prf+"_call"]);
+				localStorage.removeItem(prf+"_call");
+				localStorage.removeItem(prf+"_method");
+			}
+		}
+	});
+};
 $gg.apiWrapper = function(data){
 	data.key = this.app_key;
 };
@@ -192,6 +254,7 @@ $gg.me = function(callback){
 $gg.friends = function(callback){
 	return this.get("people/me/people/visible",callback);
 };
+
 
 /**
  * linkedin

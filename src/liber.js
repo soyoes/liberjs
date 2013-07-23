@@ -23,6 +23,9 @@ var $browser = (function(){
     	browser.version = 9;
     
     */
+    var av=navigator.appVersion;
+    var osnames = {"Win":"windows","Mac":"mac","X11":"linux","Linux":"linux"};
+    for(var k in osnames){if(av.indexOf(k)>=0){browser.os = osnames[k]; break;}}
     if(browser.name=="MSIE"&&ua.indexOf("Trident/5.0")>0){
     	browser.version = 9;	
     	if($conf.redirect_ie9)
@@ -276,6 +279,10 @@ String.prototype.CJKLength = function() {
 	}
 	return len;
 };
+String.prototype.splice = function( idx, len, sub ) {
+    return (this.slice(0,idx) + sub + this.slice(idx + Math.abs(len)));
+};
+
 
 var $utils = {
 	/**
