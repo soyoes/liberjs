@@ -78,10 +78,8 @@ var $app = {
 		}
 	},
 	loaded : function(){
-		if(typeof($app.start_view)=="string")
-			$app.loadView($app.start_view);
-		else
-			$app.loadView();
+		var v = (typeof($app.start_view)=="string")?$app.start_view: $conf.default_view;
+		$app.loadView(v, true);
 	},
 	handle : function(type, data){
 		switch(type){
@@ -89,7 +87,7 @@ var $app = {
 				$app.drawView();
 				break;
 			case "redirect":
-				$app.loadView(data);
+				$app.loadView(data,true);
 				break;
 			default:
 				break;
@@ -101,11 +99,11 @@ var $app = {
 		if(target){
 			var url = target.getAttribute("url");
 			if(url){
-				$app.loadView(url);
+				$app.loadView(url, target.tagName!="a");
 			}
 		}
 	},
-	loadView : function(url){
+	loadView : function(url, updateHistory){
 		url = url || $conf.default_view;
 		if(url){
 			if(url.indexOf("http:")==0 || url.indexOf("https:")==0){
@@ -121,7 +119,8 @@ var $app = {
 					return;
 				}
 				$this = view;
-				$app._histories.push($this);
+				if(updateHistory)
+					$history.push(url);
 				view.params = params;
 				if(view.onload){
 					view.onload(params);
@@ -159,6 +158,10 @@ var $app = {
 	}
 };
 
+/**runtimes variables will be deleted in ?ms */
+var __={};
+__set=function(k,v){__[k] = v;$utils.setTimeout(function(key){delete __[key];}, 300, k);};
+__clear=function(){__={};};
 
 var $controller = {
 	loaded : function(){
@@ -187,58 +190,23 @@ var $controller = {
 /*//console.log("browser",$browser.name,"-",$browser.version);*/
 
 var $history = {
-	stack : [],
-	change : function(e){
-		anc = history.state || location.hash;
-		////console.log("history.change", anc);
-		e.stopPropagation(); 
-	    e.preventDefault();
-	    e.cancelBubble = false; 
-		if(!anc || anc==""){
-			window.location = window.location;			
-		}else {
-			if($history.stack.length>0){
-				last = $history.stack.length>1 ? $history.stack[$history.stack.length-2] : null;
-				////console.log("last", last);
-				if(last && last == anc){
-					$history.stack.pop();
-					$history.stack.pop();
-					window._layers.pop();
-					$ui.removeLayer();
-				}else{
-					if($history.stack[$history.stack.length-1]!=anc)
-						$history.stack.push(anc);
-				}
-			}else{
-				$history.stack.push(anc);
-			}
-		}
+	push : function(url){
+		//var path = url.replace(/\?/g,'#'); 
+		$utils.fire($a({href:"#"+url, html:"_"}), "click");
 	},
-
-	push : function(anchor){
-		if(typeof(anchor)!="string" && anchor.attr){
-			href = anchor.attr("href");
-			if(href)
-	    		anchor = href;
-			else
-				return;
-		}
-		if(anchor != "#"){
-			if(history.pushState){
-				history.pushState({},anchor, anchor);
+	init: function(){
+		window.onhashchange = function () {
+			var hash = window.location.hash.replace(/^#/,"");
+			//console.log("hash",hash);
+			if(hash.match(/^~/)){
+				var func = hash.replace(/^~/,"");
+				try{
+					eval(func+"()");
+				}catch(ex){}
 			}else{
-				lk = $a({href:anchor},document.body);
-				$utils.fire(lk, "click");
+				$app.loadView(hash,false);
 			}
-			$history.stack.push(anchor);
-		}
-	},
-	init : function(){
-		if(window.onpopstate){
-			window.onpopstate = $history.change;
-		}else{
-			window.onhashchange = $history.change;
-		}
+		};
 	}
 };
 $history.init();
@@ -674,6 +642,10 @@ var __element = {
 
 	attr : function(arg1,arg2){
 		if(typeof(arg1)=="string"){
+			if(arg1=="var"){
+				__set(arg2,this);
+				return this;
+			}
 			if(arg1=="html")
 				arg1 = "innerHTML";
 			if(arg1=="class")
@@ -943,6 +915,7 @@ var $e = function(type, args, target){
 		target.appendChild(_el);
 	return _el;
 };
+
 var TAGS = ["table","tr","th","td","div","img","ul","lo","li","p","a","b","strong","textarea","br","hr","form","input","span","label","h1","h2","h3","canvas"];
 for(var i in TAGS){
 	if(typeof(TAGS[i])=="function")continue;
@@ -1088,6 +1061,9 @@ function $(query,each,thisLayer){
 	return arr;
 }
 function $id(domid){return document.getElementById(domid);}
+
+
+
 
 /***
  * MessageCenter
@@ -1539,6 +1515,7 @@ var $http = {
 			}, false);
 		}
 		xhr.onreadystatechange=function(){
+			
   			if (xhr.readyState==4 ){
   				if(xhr.status==200){
   					if(xhr.runtimeParams.callback){

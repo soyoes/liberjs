@@ -65,8 +65,10 @@ var OAuthClient = function(platform){
 		this.host = location.port!=""&&location.port!=80? location.protocol + '//' + location.hostname+":"+location.port:
 					location.protocol + '//' + location.hostname;
 		this.path = $conf.oauth_callback_path ? $conf.oauth_callback_path:"/";
-		this.oauth_code_callback = this.host+this.path+"?oauth_callback="+this.prefix+"_oauth";
-		this.oauth_token_callback = this.host+this.path+"?oauth_callback="+this.prefix+"_oauth_token";
+		this.oauth_code_callback = this.host+this.path+"?oauth_callback="+this.platform+"&";
+		this.oauth_token_callback = this.host+this.path+"?oauth_callback="+this.platform+"&";
+		//this.oauth_code_callback = this.host+this.path;
+		//this.oauth_token_callback = this.host+this.path;
 		this.scope = def.scope||null;
 	}
 	
@@ -83,11 +85,14 @@ var OAuthClient = function(platform){
 		this.token = localStorage[prf+"_token"]||null;
 		var paramStr = location.href.indexOf("#")>0?location.href.split("#")[1]:location.href;
 		var params = $utils.unpackParams(paramStr);
+		console.log(params,localStorage[_this.prefix+"_call"]);
 		if(!params.access_token && params.code){
 			//Get token
 			_this.code = params.code;
 			return _this.getToken();
 		}else if(params.access_token){
+			if(window.location.href.indexOf(_this.platform)<0)
+				return;
 			//Do request with token
 			if(_this.validateToken && !_this.validated){
 				return _this.validateToken(params.access_token);
@@ -96,12 +101,15 @@ var OAuthClient = function(platform){
 				var expAt = parseInt(new Date().getTime()/1000)+parseInt(params.expires_in);
 				localStorage[prf+"_token"] = params.access_token;
 				localStorage[prf+"_exp"] = expAt;
+				console.log("got token", _this.token, localStorage[prf+"_call"]);
 				if(localStorage[prf+"_call"]){
-					var met = localStorage[prf+"_method"];
-					if(met)
-						_this[met](localStorage[prf+"_call"]);
+					var data = localStorage[prf+"_call_data"]?JSON.parse(localStorage[prf+"_call_data"]):{};
+					var func = localStorage[prf+"_call_success"]!=""?eval("("+localStorage[prf+"_call_success"]+")"):function(){};
+					_this._call.call(_this,localStorage[prf+"_method"],localStorage[prf+"_call"],data,func);
 					localStorage.removeItem(prf+"_call");
 					localStorage.removeItem(prf+"_method");
+					localStorage.removeItem(prf+"_call_data");
+					localStorage.removeItem(prf+"_call_success");
 				}
 			}
 			
@@ -139,11 +147,16 @@ var OAuthClient = function(platform){
 		if(!_this.token){
 			localStorage[_this.prefix+"_call"] = uri;
 			localStorage[_this.prefix+"_method"] = method;
+			localStorage[_this.prefix+"_call_data"] = data?JSON.stringify(data):{};
+			localStorage[_this.prefix+"_call_success"] = success? success.toString():"";
+			//console.log("local storage", localStorage[_this.prefix+"_call"]);return;
 			return _this.getToken();
 		}else if(localStorage[_this.prefix+"_exp"]){
 			if(new Date().getTime() >= parseInt(localStorage[_this.prefix+"_exp"])*1000){
 				localStorage[_this.prefix+"_call"] = uri;
 				localStorage[_this.prefix+"_method"] = method;
+				localStorage[_this.prefix+"_call_data"] = data?JSON.stringify(data):{};
+				localStorage[_this.prefix+"_call_success"] = success? success.toString():"";
 				localStorage.removeItem(_this.prefix+"_token");
 				return _this.getToken();
 			}
