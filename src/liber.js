@@ -501,6 +501,27 @@ var $utils = {
 	    }
 	    return el;
 	},
+	//get min, max value
+	range : function(arr,col){
+		if(!arr)return false;
+		var min,max,v,i;
+		for(i=0;i<arr.length;i++){
+			v = col? arr[i][col]:arr[i];
+			if(!min){min=v;max=v;}
+			if(min>v)min=v;
+			if(max<v)max=v;
+		}
+		return [min,max];
+	},
+	//sort arr
+	sort : function(arr,col){
+		if(!arr)return false;
+		return arr.sort(function(a,b){
+			if(!col)return b>a?-1:(b==a?0:1);
+			else
+				return b[col]>a[col]?-1:(b[col]==a[col]?0:1);
+		});
+	},
 	
 	/**
 	 * send log to dummy url log.html. for apache log analyzing. 
