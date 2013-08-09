@@ -175,10 +175,10 @@ var OAuthClient = function(platform){
 		localStorage[_this.prefix+"_call_success"] = success? success.toString():"";
 	};
 	this.removeTemp = function(){
-		localStorage.removeItem(prf+"_call");
-		localStorage.removeItem(prf+"_method");
-		localStorage.removeItem(prf+"_call_data");
-		localStorage.removeItem(prf+"_call_success");
+		localStorage.removeItem(_this.prefix+"_call");
+		localStorage.removeItem(_this.prefix+"_method");
+		localStorage.removeItem(_this.prefix+"_call_data");
+		localStorage.removeItem(_this.prefix+"_call_success");
 	};
 	
 };
@@ -189,7 +189,8 @@ var OAuthClient = function(platform){
 /**
  * $fb.init({
 		appId : "193560298133",
-		appSec : "07cbf61df779e387faa8e5df1753081f",
+		appSec : "YOUR SEC",
+		scope : "email"
 	});
 	$div("mybutton").bind({"click", function(e){
 		$fb.get("me", function(me){
@@ -254,7 +255,9 @@ $gg.validateToken = function(tk){
 			localStorage[prf+"_token"] = tk;
 			localStorage[prf+"_exp"] = expAt;
 			if(localStorage[prf+"_call"]){
-				_this._call(localStorage[prf+"_method"], localStorage[prf+"_call"],localStorage[prf+"_call_data"],localStorage[prf+"_call_success"] );
+				var data = localStorage[prf+"_call_data"] ? JSON.parse(localStorage[prf+"_call_data"]) : {};
+				var func = localStorage[prf+"_call_success"] && localStorage[prf+"_call_success"] != "" ? eval("("+localStorage[prf+"_call_success"]+")") : function(){};
+				_this._call(localStorage[prf+"_method"], localStorage[prf+"_call"], data, func);
 				_this.removeTemp();
 			}
 		}
