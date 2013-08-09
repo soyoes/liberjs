@@ -83,8 +83,10 @@ var OAuthClient = function(platform){
 		}
 		var prf = _this.prefix;
 		this.token = localStorage[prf+"_token"]||null;
+		console.log("href",location.href);
 		var paramStr = location.href.indexOf("#")>0?location.href.split("#")[1]:location.href;
 		var params = $utils.unpackParams(paramStr);
+		console.log("paramStr",paramStr);
 		console.log(params,localStorage[_this.prefix+"_call"]);
 		if(!params.access_token && params.code){
 			//Get token
@@ -106,10 +108,7 @@ var OAuthClient = function(platform){
 					var data = localStorage[prf+"_call_data"]?JSON.parse(localStorage[prf+"_call_data"]):{};
 					var func = localStorage[prf+"_call_success"]!=""?eval("("+localStorage[prf+"_call_success"]+")"):function(){};
 					_this._call.call(_this,localStorage[prf+"_method"],localStorage[prf+"_call"],data,func);
-					localStorage.removeItem(prf+"_call");
-					localStorage.removeItem(prf+"_method");
-					localStorage.removeItem(prf+"_call_data");
-					localStorage.removeItem(prf+"_call_success");
+					_this.removeTemp();
 				}
 			}
 			
@@ -145,18 +144,12 @@ var OAuthClient = function(platform){
 	
 	this._call = function(method, uri, data, success){
 		if(!_this.token){
-			localStorage[_this.prefix+"_call"] = uri;
-			localStorage[_this.prefix+"_method"] = method;
-			localStorage[_this.prefix+"_call_data"] = data?JSON.stringify(data):{};
-			localStorage[_this.prefix+"_call_success"] = success? success.toString():"";
+			_this.setTemp(method, uri, data, success);
 			//console.log("local storage", localStorage[_this.prefix+"_call"]);return;
 			return _this.getToken();
 		}else if(localStorage[_this.prefix+"_exp"]){
 			if(new Date().getTime() >= parseInt(localStorage[_this.prefix+"_exp"])*1000){
-				localStorage[_this.prefix+"_call"] = uri;
-				localStorage[_this.prefix+"_method"] = method;
-				localStorage[_this.prefix+"_call_data"] = data?JSON.stringify(data):{};
-				localStorage[_this.prefix+"_call_success"] = success? success.toString():"";
+				_this.setTemp(method, uri, data, success);
 				localStorage.removeItem(_this.prefix+"_token");
 				return _this.getToken();
 			}
@@ -172,9 +165,21 @@ var OAuthClient = function(platform){
 			if(success)
 				success(res);
 		});
-	},
-	this.get = function(uri, success){return _this._call("get",uri,{},success);},
-	this.post = function(uri,data, success){return _this._call("post",uri,data,success);}
+	};
+	this.get = function(uri, success){return _this._call("get",uri,{},success);};
+	this.post = function(uri,data, success){return _this._call("post",uri,data,success);};
+	this.setTemp=function(method,uri,data,success){
+		localStorage[_this.prefix+"_call"] = uri;
+		localStorage[_this.prefix+"_method"] = method;
+		localStorage[_this.prefix+"_call_data"] = data?JSON.stringify(data):{};
+		localStorage[_this.prefix+"_call_success"] = success? success.toString():"";
+	};
+	this.removeTemp = function(){
+		localStorage.removeItem(prf+"_call");
+		localStorage.removeItem(prf+"_method");
+		localStorage.removeItem(prf+"_call_data");
+		localStorage.removeItem(prf+"_call_success");
+	};
 	
 };
 
@@ -249,11 +254,8 @@ $gg.validateToken = function(tk){
 			localStorage[prf+"_token"] = tk;
 			localStorage[prf+"_exp"] = expAt;
 			if(localStorage[prf+"_call"]){
-				var met = localStorage[prf+"_method"];
-				if(met)
-					_this[met](localStorage[prf+"_call"]);
-				localStorage.removeItem(prf+"_call");
-				localStorage.removeItem(prf+"_method");
+				_this._call(localStorage[prf+"_method"], localStorage[prf+"_call"],localStorage[prf+"_call_data"],localStorage[prf+"_call_success"] );
+				_this.removeTemp();
 			}
 		}
 	});
