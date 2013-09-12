@@ -1555,7 +1555,8 @@ var $http = {
 	    				code : xhr.status,
 	    				message : xhr.getResponseHeader("ERROR_MESSAGE")
 	    			};
-	    			xhr.runtimeParams.callback(null, errors);		
+  					if(xhr.runtimeParams.callback)
+  						xhr.runtimeParams.callback(null, errors);		
 	  			}
     		}
   		};
