@@ -134,4 +134,5 @@ $ui.calendar = function(target,attrs,onclick ){
 		$ui._calendar=cal;
 		target.appendChild(cal.dom);
 	}
+	return $ui._calendar;
 };
