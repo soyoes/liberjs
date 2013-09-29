@@ -215,7 +215,7 @@ $fb.me = function(callback){
 };
 $fb.friends = function(callback){
 	//show thumb by http://graph.facebook.com/FREND_ID/picture
-	return this.get("me/friends",callback);
+	return this.get("me/friends?fields=name,picture.type(small)",callback);
 };
 $fb.invite = function(msg,redirectUri){
 	location.href="https://www.facebook.com/dialog/apprequests?app_id="+_this.app_id+"&message="+msg+"&redirect_uri="+this.host+redirectUri;
