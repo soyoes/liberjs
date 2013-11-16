@@ -136,6 +136,15 @@ var FormView = function(params){
 
 		
 		var validator = {};
+
+		var setSelOpts = function(opts, uOpts){
+			for(var k in uOpts){
+				if(k!="id" && k!="options" && k!="name")
+					opts[k] = uOpts[k];
+			}
+			return opts;
+		}
+
 		for(itemId in args.data){
 			var row = $tr("",list);
 			_item = args.data[itemId];
@@ -157,13 +166,13 @@ var FormView = function(params){
 
 			switch(_item.type){
 				case 'radio':
-					$radio(_item.options, {id:domId,name:itemId,value:_item.value,className:formItemClass}, cell);
+					$radio(_item.options, setSelOpts({id:domId,name:itemId,className:formItemClass},_item), cell);
 					break;
 				case 'checkbox':
-					$checkbox(_item.options, {id:domId,name:itemId,value:_item.value,className:formItemClass}, cell);
+					$checkbox(_item.options, setSelOpts({id:domId,name:itemId,className:formItemClass},_item), cell);
 					break;
 				case 'select':
-					$select(_item.options, {id:domId,name:itemId,value:_item.value,className:formItemClass}, cell);
+					$select(_item.options, setSelOpts({id:domId,name:itemId,className:formItemClass},_item), cell);
 					break;
 				case 'textarea':
 					ta = $textarea({id:domId,size:_item.size ? _item.size: 20, name:itemId, value:_item.value?_item.value:"",className:formItemClass}, cell);
