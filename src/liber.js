@@ -54,6 +54,8 @@ var $app = {
 		
 		var images = $conf.preload_images?$conf.preload_images:[];
 		
+		
+		
 		var progbar = $ui.progressBar(document.body, $conf.modules.length+images.length, {
 			update:function(progress, f){/*console.log("Preload : ",progress+"%",f);*/},
 			finish:function(progress, f){/*console.log("Preload DONE");*/$app.preloaded();}
@@ -119,7 +121,8 @@ var $app = {
 					return;
 				}
 				$this = view;
-				if(updateHistory)
+				var loc = location.href.toString();
+				if(updateHistory && ( loc.indexOf("#"+url, loc.length - url.length-1) !== -1 ) )
 					$history.push(url);
 				view.params = params;
 				if(view.onload){
@@ -878,6 +881,7 @@ if($browser.name=="MSIE" &&  $browser.version<9){
 
 
 /* DOM functions */
+var $_runtime
 var $e = function(type, args, target){
 	var _el = document.createElement(type);
 	if(target && typeof(target)=="string")
