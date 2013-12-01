@@ -676,7 +676,6 @@ var __element = {
 				arg1 = "className";
 			if(arg1=="url" && typeof(arg2)=="string"){
 				this.bind("click", $app.trans);
-				return this.attr("url",arg2);
 			}
 			if(arg2!=undefined){
 				if(this.tagName.toUpperCase() == "IMG" && arg1.toLowerCase()=="src"){
