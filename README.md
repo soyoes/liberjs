@@ -167,6 +167,8 @@ Coming soon ...
 | liber.net.js | | Core modules & functions |
 | | SocketKits($socket.*) | Web socket tool kits (TODO) |
 | liber.mapkit.js | | Core modules & functions |
+| liber.oauth.js | | common Oauth Library |
+| liber.db.js | | Local Storage Database Library |
 | | $mk.* | Google map kits |
 | | Other utility functions | Such as draw [#DrawHTMLTags HTML TAGS],   [#Selectors Selectors] ...  |
 
@@ -194,7 +196,7 @@ To present the view controller. you have to call
   $app.loadView("YOUR_VIEW_NAME"); 
   
   // or 
-  $div({url:"YOUR_VIEW_NAME?param1=b&param2=b"}).bind("click", $app.trans);
+  $div({url:"YOUR_VIEW_NAME?param1=b&param2=b"});
   
 ```
 
@@ -203,6 +205,7 @@ To present the view controller. you have to call
 ```javascript
 $("#id"); //return Element
 $(".className"); //return Element list
+$("#myId .className", function(el, idx){ ... }); //do foreach on selected elements;
 ```
 
 * $id() selector : = document.getElementById() MUCH faster than XPath selector $("#ID")
@@ -269,10 +272,12 @@ Coming soon ...
 
 * checkbox
 ```
+$sel({value1:label1, value2:label2}, {multiple:true})
 Coming soon ...
 ```
 
 * radio
+$sel({value1:label1, value2:label2}, {})
 ```
 Coming soon ...
 ```
@@ -281,12 +286,6 @@ Coming soon ...
 * FormView
 ```javascript
 $ui.formView();
-Coming soon ...
-```
-
-* Calendar
-```javascript
-$ui.calendar();
 Coming soon ...
 ```
 
@@ -403,7 +402,6 @@ TODO : remove inactive layers
 
 ## Source Code Compression
 TODO : compress the code, and load views dynamically
-
 
 
 ----

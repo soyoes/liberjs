@@ -674,6 +674,10 @@ var __element = {
 				arg1 = "innerHTML";
 			if(arg1=="class")
 				arg1 = "className";
+			if(arg1=="url" && typeof(arg2)=="string"){
+				this.bind("click", $app.trans);
+				return this.attr("url",arg2);
+			}
 			if(arg2!=undefined){
 				if(this.tagName.toUpperCase() == "IMG" && arg1.toLowerCase()=="src"){
 					this[arg1] = $conf.image_path && arg2.indexOf("data:image")<0 && arg2.indexOf("http")!=0? $conf.image_path+arg2:arg2;
@@ -1606,7 +1610,4 @@ var $http = {
 		$http.ajax('UPLOAD',url,params,callback,format,onprogress);
 	}
 };
-
-var _viewer_id = $utils.getCookie("tid");
-////console.log("_viewer_id",_viewer_id);
 
