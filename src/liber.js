@@ -961,6 +961,7 @@ for(var i in TAGS){
  * 			multiple : 1|0 //1 :select(multi) || checkbox, 0:radio||select(single)
  * 			optionClass: classname of li
  * 			labelClass: classname of li.div
+ * 			noLabel:true|false //default=false, hide label text
  * 			drawOption:function(optLI,idx)
  * 		}
  * @params target //which dom to insert
@@ -1011,7 +1012,8 @@ var $sel = function(options,attrs,target){
 	var drawOpt = attrs.drawOption;
 	for(var v in options){
 		var surfix = (isMulti)?((valuestr.indexOf('#'+v+"#")>=0)?" on":""): ((attrs.value == v)?" on":"");
-		var opt = $li([$div({className:attrs.labelClass?attrs.labelClass+surfix:surfix,html:options[v]})],list)
+		var lOpt = attrs.noLabel==true ? {className:attrs.labelClass?attrs.labelClass+surfix:surfix,html:"&nbsp;"}:{className:attrs.labelClass?attrs.labelClass+surfix:surfix,html:options[v]};
+		var opt = $li([$div(lOpt)],list)
 			.attr({name:attrs.id, value:v,idx:idx, multiple:isMulti?1:0,className:attrs.optionClass?attrs.optionClass+surfix:surfix}).bind("click", window._sel_handler);
 		if(drawOpt)drawOpt(opt,idx);
 		idx++;
