@@ -1285,13 +1285,13 @@ var $ui = {
 				window._layers.pop();
 				return $ui.showLastLayer();
 			}
-			if($id(last.id))
+			if($id(last.id)){
 				$ui.show(last);
-			else{
+				$this = window[last.attr("view")];
+			}else{
 				window._layers.pop();
 				return $ui.showLastLayer();
 			}
-				
 		}else{
 			if($conf.default_view){
 				$app.loadView($conf.default_view);
