@@ -26,6 +26,7 @@ var $layout = {
 					$ui.remove(view.layer);
 				view.layer = target;
 				view.wrapper = wrapper;
+				view.content = content;
 				view.drawContent(wrapper,target);	
 			}
 
