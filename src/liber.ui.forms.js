@@ -1,3 +1,37 @@
+/***
+ * MessageCenter
+ * ***/
+//FIXME remove this
+var $msg = {
+	messages : {},
+	register : function (targetId, msg, func, params){
+		$msg.messages[targetId]={};
+		$msg.messages[targetId][msg] = {'params':params, 'func':func};
+	},
+	call : function(targetId, msg, withData){
+		if($msg.messages[targetId][msg]){
+			var m = $msg.messages[targetId][msg];
+			var params = m.params;
+			if(!params)
+				params={};
+			if(withData)
+				for(k in withData){
+					params[k] = withData[k];
+				}
+			m.func(params);
+		}
+	},
+	trigger : function(e){
+		e = e || window.event;
+		if(e && (e.target || e.srcElement)){
+			var target = e.target || e.srcElement;
+			/*TODO get message from dom.attr*/
+			$msg.call(target.id,event.type);
+		}
+	}
+};
+
+
 String.prototype.validate = function(type){ 
 	parts = [];
 	if(type.indexOf("len:")==0 || type.indexOf("id:")==0) {

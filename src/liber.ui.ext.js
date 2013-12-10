@@ -72,3 +72,68 @@ String.prototype.screenSize=function(font, fontSize, maxWidth){
 	console.log(text+"-"+fontSize+":"+(size.width)+","+(size.height));
 	return size;
 };
+
+
+/**
+ * opts = {
+ * 	width : 240
+ * 	height : 18
+ *  label : "Loading ... "
+ *  labelStyle : {}
+ *  strokeColor : #ccc
+ *  bgColor : #666 
+ *  update : function(progress, params)
+ *  finish : function()
+ * }
+ * 
+ * css : {
+ * 	#progress-bar-frame
+ *  #progress-bar-label
+ * }
+ * 
+ * */
+$ui.progressBar =function(target,max,opts){
+	var ProgressBar = function(target,max,opts){
+		opts = opts||{};
+		var barWidth = opts.width || 240;
+		var barHeight = opts.height || 3;
+		var maxValue = max;
+		var value = 0;
+		var labelPrefix = opts.label || "Loading ... ";
+		var barFrame = $div({id:"progress-bar-frame"},target).css({margin:"300px auto auto auto",position:"relative",width:barWidth+"px",height:barHeight+"px",padding:"2px",border:"1px solid #666",borderRadius:"3px",fontSize:"0pt"});
+		var canv = $canvas({width:barWidth,height:barHeight},barFrame);
+		var barLabel = $span({id:"progress-bar-label",html:labelPrefix+"0%"},document.body).css(opts.labelStyle||{position:"absolute",top:310+barHeight+"px",width:"100%",height:"20px",zIndex:100,color:"#333",textAlign:"center",fontFamily:"impact"});
+		var ctx = canv.getContext? canv.getContext("2d"):null;
+		var onUpdate = opts.update||null;
+		var onFinish = opts.finish||null;
+		if(ctx){
+			ctx.fillStyle = opts.bgColor|| "#666";
+		    ctx.strokeStyle = opts.strokeColor||"#CCC";
+		    ctx.lineWidth = 10;
+		}
+	    this.update = function(param){
+	    	value++;
+			var progress = parseInt(value*100/maxValue);
+			if(onUpdate){onUpdate(progress,param);}
+			if(ctx){
+				canv.attr({"value":progress});
+				canv.animate({
+	    	        duration:300,
+	    	        step:function(el,delta){
+	    	        	var v=el.attr("value");
+	    	        	var w = delta*v/100*barWidth;
+	    	           	ctx.fillRect(0, 0, w, barHeight);
+	    	        }
+	    	    });
+			}
+			barLabel.innerHTML=labelPrefix+progress+"%";
+    		if(progress>=100){
+    			$ui.remove("progress-bar-frame");
+    			$ui.remove("progress-bar-label");
+    			if(onFinish){onFinish();}
+    		}
+		};
+	};
+	
+	return new ProgressBar(target,max,opts);
+};

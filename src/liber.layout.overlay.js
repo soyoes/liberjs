@@ -20,7 +20,7 @@ var $layout = {
 
 			var content = $div({id:"content"},target);
 			var wrapper = $div({"class":"wrapper",id:"wrapper",layer:target.attr("layer")},content);
-
+			
 			if(view.drawContent){
 				if(view.layer)
 					$ui.remove(view.layer);
