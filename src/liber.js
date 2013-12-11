@@ -743,6 +743,11 @@ var __element = {
 				__set(arg2,this);
 				return this;
 			}
+			if(arg1=="id"){
+				this.id = arg2;
+				__set(arg2,this);
+				return this;
+			}
 			if(arg1=="html")
 				arg1 = "innerHTML";
 			if(arg1=="class")
