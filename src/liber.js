@@ -1016,7 +1016,7 @@ NOT IN USE (Deprecated) : "acronym","applet","basefont","big","center","dir","fo
 NOT IN USE (uncommon) : "details"-"summary","dialog","bdi","command","menu","track","wbr"
 NOT IN USE (Others) : "rp"-"rt"-"ruby","object"-"param","noscript",
 
-NOT IN USE (Duplicated) : "del" -> "s", "blockquote" -> "q", "ins" -> "u", "button"->"a"
+NOT IN USE (Duplicated) : "del" -> "s", "blockquote" -> "q", "ins" -> "u"
 
 Override : "select"(with TODO:"optgroup","option") -> use $select() instead
 Override : "title" -> use $ui.title(str) instead
@@ -1053,7 +1053,7 @@ TODO : "output" for IE http://www.w3schools.com/tags/tag_output.asp TODO input-r
  "map","area","figure","figcaption",
  
  //Resources, Objects, Tools
- "a","img",
+ "a","img","button",
  "progress",
  "address","base",
  "canvas","embed","audio","video","source","progress" //HTML5
