@@ -85,7 +85,7 @@ var OAuthClient = function(platform){
 		this.token = localStorage[prf+"_token"]||null;
 		console.log("href",location.href);
 		var paramStr = location.href.indexOf("#")>0?location.href.split("#")[1]:location.href;
-		var params = $utils.unpackParams(paramStr);
+		var params = $.unserialize(paramStr);
 		console.log("paramStr",paramStr);
 		console.log(params,localStorage[_this.prefix+"_call"]);
 		if(!params.access_token && params.code){

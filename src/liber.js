@@ -123,6 +123,7 @@ $.isElement = function(obj) {
 			(typeof obj.ownerDocument ==="object");
   	}
 }
+$.isNumber = function(n) {return !isNaN(parseFloat(n)) && isFinite(n);}
 $.keys=function(obj){
 	var s = [];for(var k in obj){s.push(k);}return s;
 };
