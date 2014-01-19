@@ -577,12 +577,14 @@ var $history = {
 		window.onhashchange = function () {
 			var hash = window.location.hash.replace(/^#/,"");
 			//console.log("hash",hash);
-			if(hash.match(/^~/)){
+			if(hash.match(/^~/)){//call func
 				var func = hash.replace(/^~/,"");
 				try{
-					eval(func+"()");
+					eval("("+func+"())");
 				}catch(ex){}
-			}else{
+			}else if(hash.match(/^@/)){//anchor
+				return;
+			}else{//transition
 				$app.loadView(hash,false);
 			}
 		};
