@@ -75,6 +75,7 @@ var __packages = "",
 
 function $(query,each,allLayer){
 	var res = [];
+	if(allLayer == undefined) allLayer = $conf.query_all_layer?true:false; 
 	if(allLayer && query.indexOf(' ')<0){/* querySelectorAll is not as fast as we wish.*/
 		if(query.charAt(0)=="#")
 			return document.getElementById(query.replace("#",""));
@@ -502,7 +503,7 @@ var $app = {
 				if(view.onload){
 					view.onload(params);
 				}else{
-					view.loaded();
+					view.loaded();//$controller.loaded
 				}
 			}
 		}
@@ -577,14 +578,12 @@ var $history = {
 		window.onhashchange = function () {
 			var hash = window.location.hash.replace(/^#/,"");
 			//console.log("hash",hash);
-			if(hash.match(/^~/)){//call func
+			if(hash.match(/^~/)){
 				var func = hash.replace(/^~/,"");
 				try{
-					eval("("+func+"())");
+					eval(func+"()");
 				}catch(ex){}
-			}else if(hash.match(/^@/)){//anchor
-				return;
-			}else{//transition
+			}else{
 				$app.loadView(hash,false);
 			}
 		};
@@ -753,7 +752,7 @@ var __element = {
 			}
 			if(arg1=="html")
 				arg1 = "innerHTML";
-			if(arg1=="class")
+			if(arg1=="class"||arg1=="classname")
 				arg1 = "className";
 			if(arg1=="url" && typeof(arg2)=="string"){
 				this.bind("click", $app.trans);

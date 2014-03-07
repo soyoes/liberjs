@@ -87,13 +87,15 @@ var DataSet = function(name,datas){
 	 * 	// order by name desc
 	 *
 	 */
-	var _query=function(opts){
+	var _query=function(opts,firstOnly){
 		var _c = _buildQuery(opts);
 		//console.log(_c);
 		var res = [];
 		for(var i in _ds.data){
 			if(_filter(_c, _ds.data[i])){
-				res.push(_rebuild(_ds.data[i], opts["@fields"]));
+				var v = _rebuild(_ds.data[i], opts["@fields"]);
+				if(firstOnly) return v;
+				else res.push(v);
 			}
 		}
 		if(opts["@sort"])
@@ -140,13 +142,37 @@ var DataSet = function(name,datas){
 	var _this = this;
 	this.query=_query;
 	this.add=function(data){
-		if(data && data.length==_ds.scheme.length){
-			_ds.data.push(data);
+		if(data && typeof data === 'object' && !$.isArray(data)){
+			_ds.data.push($.values(data));
+		}else if(data && $.isArray(data)){
+			for(var i =0;i<data.length;i++)
+				_ds.data.push($.values(data[i]));
 		}else{
 			console.log("LiberJS DataSet : Wrong data format.", data);
 		}
 		return _this;
 	};
+	
+	this.size = function(){
+		return _ds.data?_ds.data.length:0;
+	}
+	
+	/**
+	 * get by index;
+	 * */
+	this.get = function (idx){
+		return _ds.data?_rebuild(_ds.data[idx]):null;
+	}
+	
+	/**
+	 * set value by index;
+	 * */
+	this.set = function (idx,value){
+		//if(_ds.data)_ds.data[idx]=value;
+		//TODO
+	}
+	
+	
 	/**
 	 * delete from list with opts
 	 * */

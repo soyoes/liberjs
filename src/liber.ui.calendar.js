@@ -17,7 +17,11 @@ var Calendar = function(attrs,onclick){
 		var month = (cell.className.indexOf("lastmonth")>0)? parseInt(parts[1])-2:
 					((cell.className.indexOf("nextmonth")>0) ? parseInt(parts[1]) : parseInt(parts[1])-1);
 		date = new Date(parts[0],month,parts[2]);
-		_this._onclick(date);
+		$("#calendar li",function(el,idx){
+			el.className = el.className.replace(/\s*on/,''); 
+		});
+		cell.className += cell.className&&cell.className.length>0? " on":"on";
+		_this._onclick(date,cell);
 	};
 
 	this.dom = undefined;
