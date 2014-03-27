@@ -1562,7 +1562,7 @@ var $http = {
 	  						try{
 	  							res = JSON.parse(res);
 	  						}catch(ex){
-	  							xhr.runtimeParams.callback(null,{message:"json_error", data:res});
+	  							return xhr.runtimeParams.callback(null,{message:"json_error", data:res});
 	  						}
 	  					}
 	    				xhr.runtimeParams.callback(res);
