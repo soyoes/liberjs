@@ -66,7 +66,18 @@ var __packages = "",
 	    	if($conf.redirect_ie9)
 	    		location.href=$conf.redirect_ie9;
 	    }
-	    if(!console){window.console={log:function(v){}};}
+	    if(!window.console){//window.console={log:function(v){}};
+	    	var methods = [
+	    	     'assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error','exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log',
+	    	     'markTimeline', 'profile', 'profileEnd', 'table', 'time', 'timeEnd','timeStamp', 'trace', 'warn'
+	    	     ],dummy = function(){},len = methods.length,
+	    	    console = (window.console = window.console || {});
+	    	    for(var i=0;i<len;i++){
+	    	    	if (!console[methods[i]]) {
+    	           		console[methods[i]] = dummy;
+    	           	}
+	    	    }
+	    }
 	    return browser;
 	})();
 	
@@ -356,10 +367,10 @@ $.fire = function(el, eventName){
 	el = typeof(el)=="string" ? $id(el):el;
 	if(el == undefined)
 		return;
-    var options = $.extend(_eventDefaultOptions, arguments[2] || {});
-    	oEvent, eventType = null;
-    for (var name in _eventMatchers){
-        if (_eventMatchers[name].test(eventName)) { eventType = name; break; }
+    var options = $.extend(__eventDefaultOptions, arguments[2] || {});
+    	oEvent=null, eventType = null;
+    for (var name in __eventMatchers){
+        if (__eventMatchers[name].test(eventName)) { eventType = name; break; }
     }
     if (!eventType)
         throw new SyntaxError('Only HTMLEvents and MouseEvents interfaces are supported');
@@ -1031,7 +1042,7 @@ TODO : "meter" for IE //http://www.w3schools.com/tags/tag_meter.asp
 TODO : "output" for IE http://www.w3schools.com/tags/tag_output.asp TODO input-range, input-number;
 
 */
-[ 
+var __tags = [ 
  //Struct Common
  "div","p","span","br","hr",
  "ul","ol","li","dl","dt","dd",
@@ -1059,9 +1070,12 @@ TODO : "output" for IE http://www.w3schools.com/tags/tag_output.asp TODO input-r
  "progress",
  "address","base",
  "canvas","embed","audio","video","source","progress" //HTML5
-].forEach(function(tag){
+];
+
+for(var i=0;i<__tags.length;i++){
+	var tag=__tags[i];
 	eval(["window.$" , tag , "= function(args,target){ return $e('" , tag,  "', args,target); };"].join(''));
-});
+};
 
 //["table","tr","th","td","div","img","ul","lo","li","p","i","a","b","strong","textarea","br","hr","form","input","span","label","h1","h2","h3","canvas"].forEach();
 
@@ -1553,7 +1567,6 @@ var $http = {
 			}, false);
 		}
 		xhr.onreadystatechange=function(){
-			
   			if (xhr.readyState==4 ){
   				if(xhr.status==200){
   					if(xhr.runtimeParams.callback){
