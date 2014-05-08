@@ -359,7 +359,7 @@ $.archivePath = function(id, devider){
 }
 $.extend = function(destination, source) {
     for (var property in source)
-      destination[property] = source[property];
+      if(!(property in destination)) destination[property] = source[property];
     return destination;
 }
 
