@@ -408,7 +408,7 @@ $.log = function(action){
 	action=[$this.name, uid, action].join(":");
 	if($http)
 		$http.get([log_url+"?action=",action].join(""));
-},
+};
 $.rand = function(min, max) {
 	var argc = arguments.length;
 	if (argc === 0) {
@@ -419,8 +419,26 @@ $.rand = function(min, max) {
 		min = 1;
 	}
 	return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+};
 
+var $html = {
+	entityMap: {
+		escape:   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;' },
+		unescape: { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#x27;': "'" }
+    },
+    escape: function(str) {
+    	if (str === null || str === undefined) return '';
+    	var _this = this;
+    	var regexp = new RegExp('[' + $.keys(_this.entityMap.escape).join('') + ']', 'g');
+    	return ("" + str).replace(regexp, function(m) { return _this.entityMap.escape[m]; });
+    },
+    unescape: function(str) {
+    	if (str === null || str === undefined) return '';
+    	var _this = this;
+    	var regexp = new RegExp('(' + $.keys(_this.entityMap.unescape).join('|') + ')', 'g');
+    	return ("" + str).replace(regexp, function(m) { return _this.entityMap.unescape[m]; });
+    }
+};
 
 var $app = {
 	start : function(start_view){
@@ -641,6 +659,12 @@ String.prototype.CJKLength = function() {
 String.prototype.splice = function( idx, len, sub ) {
     return (this.slice(0,idx) + sub + this.slice(idx + Math.abs(len)));
 };
+if (typeof String.prototype.startsWith != 'function') {
+    String.prototype.startsWith = function(prefix) { return this.slice(0, prefix.length) == prefix; };
+} 
+if (typeof String.prototype.endsWith != 'function') {
+	String.prototype.endsWith = function(suffix) { return this.slice(-suffix.length) == suffix; };
+}
 
 var $deltas = {
 	linear : function (progress) {
@@ -1311,6 +1335,16 @@ var $ui = {
 		if(el && el.parentNode)
 			el.parentNode.removeChild(el);
 	},
+	insertBefore : function(el, target) {
+		el     = $.isElement(el)     ? el     : $id(el);
+		target = $.isElement(target) ? target : $id(target);
+		target.parentNode.insertBefore(el, target);
+	},
+	insertAfter : function(el, target) {
+		el     = $.isElement(el)     ? el     : $id(el);
+		target = $.isElement(target) ? target : $id(target);
+		target.parentNode.insertBefore(el, target.nextSibling);
+	},
 	unselectable : function(el){
 		el.attr({"unselectable":"on"}).bind("selectstart",function(e){return preventDefault(e);}).css({"-moz-user-select": "none", "-webkit-user-select": "none", "-ms-user-select":"none", "user-select":"none"});
 	},
@@ -1628,7 +1662,7 @@ var $http = {
 	del : function(url, params, callback, format){
 		$http.ajax('DELETE',url,params,callback,format);
 	},
-	upload : function(url, params, callback, onprogress,format){
+	upload : function(url, params, callback, format, onprogress){
 		$http.ajax('UPLOAD',url,params,callback,format,onprogress);
 	}
 };
