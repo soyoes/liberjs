@@ -982,6 +982,7 @@ var __element = {
 if($browser.name=="MSIE" &&  $browser.version<9){
 	$.include("liber.ie8");
 }else{
+    if (typeof Element.prototype.animate == 'function') Element.prototype.animate = __element.animate;
 	$.extend(Element.prototype,__element);
 }
 
