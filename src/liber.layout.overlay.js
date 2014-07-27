@@ -27,6 +27,7 @@ var $layout = {
 				view.layer = target;
 				view.wrapper = wrapper;
 				view.content = content;
+				view.id = target.id;
 				view.drawContent(wrapper,target);	
 			}
 

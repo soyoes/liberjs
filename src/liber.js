@@ -95,7 +95,8 @@ function $(query,each,allLayer){
 		if(/^[a-zA-Z]+$/.test(query))
 			res = document.getElementsByTagName(query);
 	}else{
-		query=!allLayer?"#layer_"+(__layerIDX-1)+" "+query:query;//FIXME __layerIDX -> lastLayer.idx
+		//query=!allLayer?"#layer_"+(__layerIDX-1)+" "+query:query;//FIXME __layerIDX -> lastLayer.idx
+		query=!allLayer?"#"+$this.id+" "+query:query;
 		var qs = query.trim().split(" ");
 		var lastq = qs[qs.length-1];
 		res = document.querySelectorAll(query);
@@ -115,7 +116,11 @@ function $(query,each,allLayer){
 	}
 	return arr;
 }
-function $id(domid){return document.getElementById(domid);}
+function $id(domid, allLayer){
+	if(allLayer==undefined)
+		allLayer = $conf.query_all_layer?true:false; 
+	return (allLayer) ? document.getElementById(domid):$("#"+domid,null,allLayer);
+}
 $.isArray = function(v){
 	return Object.prototype.toString.call(v) === '[object Array]';
 }
@@ -302,7 +307,7 @@ $.include = function(src, callback,params){
 	var jsId = src.split("/");
 	jsId = jsId[jsId.length-1].replace(/\./g,"_");
 	var time = new Date().getTime();
-	if(!$id(jsId)){
+	if(!$id(jsId,true)){
 		var cb = callback;
 		var cbprm = params;
 		var included = function(e){
@@ -982,7 +987,7 @@ var __element = {
 if($browser.name=="MSIE" &&  $browser.version<9){
 	$.include("liber.ie8");
 }else{
-    if (typeof Element.prototype.animate == 'function') Element.prototype.animate = __element.animate;
+	if (typeof Element.prototype.animate == 'function') Element.prototype.animate = __element.animate;
 	$.extend(Element.prototype,__element);
 }
 
@@ -1114,6 +1119,7 @@ for(var i=0;i<__tags.length;i++){
  * 			multiple : 1|0 //1 :select(multi) || checkbox, 0:radio||select(single)
  * 			optionClass: classname of li
  * 			labelClass: classname of li.div
+ *			formId : optional 			
  * 			noLabel:true|false //default=false, hide label text
  * 			drawOption:function(optLI,idx)
  * 		}
@@ -1171,7 +1177,7 @@ var $sel = function(options,attrs,target){
 		if(drawOpt)drawOpt(opt,idx);
 		idx++;
 	}
-	$input({name:attrs.name, id:attrs.id+"-input", type:'hidden',value:attrs.value?attrs.value:''},container);
+	$input({name:attrs.name, id:attrs.id+"-input", className:attrs.formId?'form-item-'+attrs.formId:"", type:'hidden',value:attrs.value?attrs.value:''},container);
 	return container;
 };
 
@@ -1464,7 +1470,7 @@ var $ui = {
 				__layers.pop();
 				return $ui.showLastLayer();
 			}
-			if($id(last.id)){
+			if($id(last.id,true)){
 				$ui.show(last);
 				$this = window[last.attr("view")];
 			}else{
@@ -1554,7 +1560,7 @@ var $ui = {
 	 * */
 	uploadWindow : function(callback,multiple){
 		var fname = "__tmpFileForm", iname="__tmpFileBtn";
-		var imgform = $id(fname);
+		var imgform = $id(fname,true);
 		if(imgform==undefined){
 			imgform = $form({id:fname, enctype:"multipart/form-data"}, document.body).css({border:'0px',height:'0px',width:'0px',display:"none"});
 			var params = {id:iname,type:"file", name:"tempfile"};
@@ -1567,7 +1573,7 @@ var $ui = {
 			imgform.style.display = "block";
 			$.fire(iname,"click");
 			$.setTimeout(function(){
-				$id(fname).style.display = "none";
+				$id(fname,true).style.display = "none";
 			},100);
 		}
 	}
@@ -1610,6 +1616,7 @@ var $http = {
 	  						try{
 	  							res = JSON.parse(res);
 	  						}catch(ex){
+	  							//console.log(res);
 	  							return xhr.runtimeParams.callback(null,{message:"json_error", data:res});
 	  						}
 	  					}
