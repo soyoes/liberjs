@@ -3,6 +3,9 @@
  * @Copywrite (c) 2013, Liberhood, http://liberhood.com 
  * @URL : https://github.com/soyoes/liberjs
  * @license : MIT License
+ *
+ * TODO : unbind
+ * 
  */
 
 var __packages = "",
@@ -32,9 +35,8 @@ var __packages = "",
 	},
 	preventDefault = function(e) {
         e = e || window.event;
-        if (e.preventDefault) {
+        if (e.preventDefault)
             e.preventDefault();
-        }
         e.returnValue = false;
     },
     /**
@@ -83,17 +85,14 @@ var __packages = "",
 	
 	
 /* shot cuts */
-
+// if(!$) //to support jquery
 function $(query,each,allLayer){
-	var res = [];
-	if(allLayer == undefined) allLayer = $conf.query_all_layer?true:false; 
+	var res;
+	if(allLayer == undefined) allLayer = $conf.query_all_layer==undefined?true:$conf.query_all_layer; 
 	if(allLayer && query.indexOf(' ')<0){/* querySelectorAll is not as fast as we wish.*/
 		if(query.charAt(0)=="#")
 			return document.getElementById(query.replace("#",""));
-		if(query.charAt(0)=="." && document.getElementsByClassName)
-			res = document.getElementsByClassName(query.replace(".",""));
-		if(/^[a-zA-Z]+$/.test(query))
-			res = document.getElementsByTagName(query);
+		res = document.querySelectorAll(query);
 	}else{
 		//query=!allLayer?"#layer_"+(__layerIDX-1)+" "+query:query;//FIXME __layerIDX -> lastLayer.idx
 		query=!allLayer?"#"+$this.id+" "+query:query;
@@ -102,19 +101,9 @@ function $(query,each,allLayer){
 		res = document.querySelectorAll(query);
 		if(lastq.charAt(0)=="#")return res[0];
 	}
-	var arr=[], l=res.length>>>0;
-	for( ; l--; arr[l]=res[l] );//We HAVE TO change NodesList to Array. or nodelist will change it self dynamically 
-	if(each){
-		var len = arr.length;
-		for(var i=0;i<len;i++){
-			var dm=arr[i];
-			var type = typeof(dm);
-			if(type != "string" && type!="function" && type!="number"){
-				each(dm,i);
-			}
-		}
-	}
-	return arr;
+	if(each && res)
+		res.each(each);
+	return res;
 }
 function $id(domid, allLayer){
 	if(allLayer==undefined)
@@ -671,6 +660,27 @@ if (typeof String.prototype.endsWith != 'function') {
 	String.prototype.endsWith = function(suffix) { return this.slice(-suffix.length) == suffix; };
 }
 
+NodeList.prototype.each = function(func){
+	if(func) for(var i=0;i<this.length;i++)
+		func(this[i],i);
+	return this;
+};
+
+NodeList.prototype.callfunc = function(func,k,v){
+	var f = (func && (typeof func == 'string' || func instanceof String))?
+		Element.prototype[func]:false;
+	if(f) for (var i=0;i<this.length;i++)
+		f.call(this[i], k, v);
+	return this;
+};
+
+NodeList.prototype.attr = function(k,v){return this.callfunc("attr",k,v);};
+NodeList.prototype.css = function(k,v){return this.callfunc("css",k,v);};
+NodeList.prototype.bind = function(k,v){return this.callfunc("bind",k,v);};
+//NodeList.prototype.unbind = function(k){return this.callfunc("unbind",k);};
+NodeList.prototype.hide = function(k){return this.callfunc("hide");};
+NodeList.prototype.show = function(){return this.callfunc("show");};
+
 var $deltas = {
 	linear : function (progress) {
 		return progress;
@@ -1099,12 +1109,21 @@ var __tags = [
  "a","img","button",
  "progress",
  "address","base",
- "canvas","embed","audio","video","source","progress" //HTML5
+ "canvas","embed","audio","video","source","progress", //HTML5
+
+ //SVG tags
+ 'altglyph','altglyphdef','altglyphitem','animate','animatecolor','animatemotion','animatetransform',
+ 'circle','clippath','color_profile','cursor','defs','desc','ellipse',
+ 'feblend','fecolormatrix','fecomponenttransfer','fecomposite','feconvolvematrix','fediffuselighting','fedisplacementmap','fedistantlight','feflood','fefunca','fefuncb','fefuncg','fefuncr','fegaussianblur','feimage','femerge','femergenode','femorphology','feoffset','fepointlight','fespecularlighting','fespotlight','fetile','feturbulence',
+ 'filter','font','font_face','font_face_format','font_face_name','font_face_src','font_face_uri','foreignobject',
+ 'g','glyph','glyphref','hkern','image','line','lineargradient','marker','mask','metadata','missing_glyph',
+ 'mpath','path','pattern','polygon','polyline','radialgradient','rect','script','set','stop','style','svg','switch','symbol','text','textpath','tref','tspan','use','view','vkern'
+
 ];
 
 for(var i=0;i<__tags.length;i++){
 	var tag=__tags[i];
-	eval(["window.$" , tag , "= function(args,target){ return $e('" , tag,  "', args,target); };"].join(''));
+	eval(["window.$" , tag ,"=",tag.toUpperCase(), "= function(args,target){ return $e('" , tag,  "', args,target); };"].join(''));
 };
 
 //["table","tr","th","td","div","img","ul","lo","li","p","i","a","b","strong","textarea","br","hr","form","input","span","label","h1","h2","h3","canvas"].forEach();
