@@ -122,7 +122,7 @@ $.isBool = function(va){
 }
 $.isElement = function(obj) {
 	try {
-    	return obj instanceof HTMLElement;
+    	return obj instanceof HTMLElement || obj instanceof SVGElement;
 	}catch(e){
 		return (typeof obj==="object") &&
 			(obj.nodeType===1) && (typeof obj.style === "object") &&
@@ -1004,6 +1004,7 @@ if($browser.name=="MSIE" &&  $browser.version<9){
 /* DOM functions */
 //var $_runtime;
 var $e = function(type, args, target, namespace){
+	type = namespace? type.replace(/_/g, "-"):type;
 	var _el = namespace? document.createElementNS(namespace,type):document.createElement(type);
 	if(target && typeof(target)=="string")
 		target = $id(target);
@@ -1111,24 +1112,20 @@ var __tags = [
  "address","base",
  "canvas","embed","audio","video","source","progress", //HTML5
 
-];
-//SVG tags
-var _svg_tags = [
-'altglyph','altglyphdef','altglyphitem','animate','animatecolor','animatemotion','animatetransform',
+ //SVG tags
+ 'svg','altglyph','altglyphdef','altglyphitem','animate','animatecolor','animatemotion','animatetransform',
  'circle','clippath','color_profile','cursor','defs','desc','ellipse',
  'feblend','fecolormatrix','fecomponenttransfer','fecomposite','feconvolvematrix','fediffuselighting','fedisplacementmap','fedistantlight','feflood','fefunca','fefuncb','fefuncg','fefuncr','fegaussianblur','feimage','femerge','femergenode','femorphology','feoffset','fepointlight','fespecularlighting','fespotlight','fetile','feturbulence',
  'filter','font','font_face','font_face_format','font_face_name','font_face_src','font_face_uri','foreignobject',
  'g','glyph','glyphref','hkern','image','line','lineargradient','marker','mask','metadata','missing_glyph',
- 'mpath','path','pattern','polygon','polyline','radialgradient','rect','script','set','stop','style','svg','switch','symbol','text','textpath','tref','tspan','use','view','vkern'
- ];
+ 'mpath','path','pattern','polygon','polyline','radialgradient','rect','script','set','stop','style','switch','symbol','text','textpath','tref','tspan','use','view','vkern'
 
+];
+var _ns = "";
 for(var i=0;i<__tags.length;i++){
 	var tag=__tags[i];
-	eval(["window.$" , tag ,"=",tag.toUpperCase(), "= function(args,target){ return $e('" , tag,  "', args,target); };"].join(''));
-};
-for(var i=0;i<_svg_tags.length;i++){
-	var tag=_svg_tags[i];
-	eval(["window.$" , tag ,"=",tag.toUpperCase(), "= function(args,target){ return $e('" , tag,  "', args,target,'http://www.w3.org/2000/svg'); };"].join(''));
+	if(tag=="svg") _ns = ",'http://www.w3.org/2000/svg'";
+	eval(["window.$" , tag ,"=",tag.toUpperCase(), "= function(args,target){ return $e('" , tag,  "', args,target",_ns,"); };"].join(''));
 };
 
 //["table","tr","th","td","div","img","ul","lo","li","p","i","a","b","strong","textarea","br","hr","form","input","span","label","h1","h2","h3","canvas"].forEach();
