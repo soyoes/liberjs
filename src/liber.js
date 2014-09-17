@@ -33,6 +33,12 @@ var __packages = "",
 		bubbles: true,
 		cancelable: true
 	},
+    stopPropagation = function(e) {
+        e = e || window.event;
+        if (e.stopPropagation)
+            e.stopPropagation();
+        e.cancelBubble = false;
+    },
 	preventDefault = function(e) {
         e = e || window.event;
         if (e.preventDefault)
@@ -228,6 +234,27 @@ $.serialize = function(params,rowSpliter,kvSpliter) {
 	}
 	return pairs.join(rowSpliter);
 }
+
+$.serializeForm = function (form) {
+    var obj = {};
+    var elements = form.querySelectorAll("input, select, textarea");
+    for( var i = 0; i < elements.length; ++i ) {
+        var element = elements[i];
+        var name = element.name;
+        var value = element.value;
+
+        if (name) {
+            if (obj[name]) {
+                if (!$.isArray(obj[name]))
+                    obj[name] = [obj[name]];
+                obj[name].push(value);
+            } else
+            obj[name] = value;
+        }
+    }
+    return obj;
+};
+
 /**
  * preload image list (or css|font)
  * */
