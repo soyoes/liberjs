@@ -243,6 +243,8 @@ $.serializeForm = function (form) {
         var name = element.name;
         var value = element.value;
 
+        if ((element.type == "checkbox" || element.type == "radio") && !element.checked)
+            continue;
         if (name) {
             if (obj[name]) {
                 if (!$.isArray(obj[name]))
