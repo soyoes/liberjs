@@ -1686,9 +1686,9 @@ var $http = {
   		if(params){
   			var datas = [];
   			for (var key in params){
-  				key = key.replace(/\//g,'%2F').replace(/\s/g,'%20');
-  				var value = params[key]+"";
-  				value =!isFile ? value.replace(/\//g,'%2F').replace(/\s/g,'%20'):value;
+                var value = params[key]+"";
+  				key = encodeURIComponent(key);
+                value =!isFile ? encodeURIComponent(value) :value;
   				datas.push(key+'='+value);
   			}
   			userdata = datas.join('&');
