@@ -808,7 +808,10 @@ var __element = {
 				}
 				this.style[arg1] = arg2;
 			}else 
-				return this.style[arg1];
+                if ($browser.name == "Firefox")
+                    this.style.setProperty(arg1, arg2);
+                else
+                    this.style[arg1] = arg2;
 		}else if(typeof(arg1)=="object" && !arg2){
 			for(var f in arg1){
 				//this.style[f] = arg1[f];
