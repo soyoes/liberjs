@@ -802,16 +802,16 @@ var __element = {
 	
 	css : function(arg1,arg2){
 		if(typeof(arg1)=="string"){
-			if(arg2!=undefined){
+			if(arg2!==undefined){
 				if(arg1.indexOf("background")>=0 && arg2.indexOf("url(")>=0 && $conf.image_path && arg2.indexOf("data:image")<0 && arg2.indexOf("http")<0){
 					arg2 = arg2.replace("url(", "url("+$conf.image_path);
 				}
-				this.style[arg1] = arg2;
-			}else 
                 if ($browser.name == "Firefox")
                     this.style.setProperty(arg1, arg2);
                 else
                     this.style[arg1] = arg2;
+            } else
+                return this.style[arg1];
 		}else if(typeof(arg1)=="object" && !arg2){
 			for(var f in arg1){
 				//this.style[f] = arg1[f];
@@ -859,7 +859,7 @@ var __element = {
 								this.style.color = "#999";
 								this.attachEvent("onfocus",function(e){
 									 e = e||window.event;
-									 var ipt = event.srcElement;
+									 var ipt = e.target||e.srcElement;
 									 ipt.style.color = "#333";
 						             if (ipt.value == ipt.attr('placeHolder')) {
 						                 ipt.value = "";
@@ -867,7 +867,7 @@ var __element = {
 						        });
 								this.attachEvent("onblur",function(e){
 									e = e||window.event;
-									var ipt = event.srcElement;
+									var ipt = e.target||e.srcElement;
 									if (ipt.value == '' || ipt.value == ipt.attr('placeHolder')) {
 						                ipt.value = ipt.attr('placeHolder');
 						                ipt.style.color = "#999";
@@ -1125,7 +1125,7 @@ var __tags = [
  "table","caption","tbody","thead","tfoot","colgroup","col","tr","td","th",
  
  //Form
- "form","fieldset","legend","input","label","textarea",
+ "form","fieldset","legend","input","label","textarea","select","option",
 
  //Markup
  "b","h1","h2","h3","h4","h5","h6","cite","pre",
@@ -1145,7 +1145,7 @@ var __tags = [
  "canvas","embed","audio","video","source","progress", //HTML5
 
  //SVG tags
- 'svg','altglyph','altglyphdef','altglyphitem','animate','animatecolor','animatemotion','animatetransform',
+ 'svg','altglyph','altglyphdef','altglyphitem','animate','animateColor','animateMotion','animateTransform',
  'circle','clippath','color_profile','cursor','defs','desc','ellipse',
  'feblend','fecolormatrix','fecomponenttransfer','fecomposite','feconvolvematrix','fediffuselighting','fedisplacementmap','fedistantlight','feflood','fefunca','fefuncb','fefuncg','fefuncr','fegaussianblur','feimage','femerge','femergenode','femorphology','feoffset','fepointlight','fespecularlighting','fespotlight','fetile','feturbulence',
  'filter','font','font_face','font_face_format','font_face_name','font_face_src','font_face_uri','foreignobject',
