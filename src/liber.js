@@ -709,6 +709,8 @@ NodeList.prototype.bind = function(k,v){return this.callfunc("bind",k,v);};
 //NodeList.prototype.unbind = function(k){return this.callfunc("unbind",k);};
 NodeList.prototype.hide = function(k){return this.callfunc("hide");};
 NodeList.prototype.show = function(){return this.callfunc("show");};
+NodeList.prototype.addClass = function(v){return this.callfunc("addClass",v);};
+NodeList.prototype.removeClass = function(v){return this.callfunc("removeClass",v);};
 
 var $deltas = {
 	linear : function (progress) {
