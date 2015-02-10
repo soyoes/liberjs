@@ -668,16 +668,9 @@ String.prototype.trim = function() {
 String.prototype.CJKLength = function() {
 	var len = 0;
 	var str = escape(this);
-	for (var i=0; i<str.length; i++, len++) {
-		if (str.charAt(i) == "%") {
-			if (str.charAt(++i) == "u") {
-				i += 3;
-				len++;
-			}
-			i++;
-		}
-	}
-	return len;
+
+	str = str.replace(/%u.{4}/gm,"1");
+	return str.length;
 };
 String.prototype.splice = function( idx, len, sub ) {
     return (this.slice(0,idx) + sub + this.slice(idx + Math.abs(len)));
