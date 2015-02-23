@@ -28,6 +28,9 @@ var top_view = {
 		and `name` must have the same value with this controller.*/
 	name : "top_view",
 
+	/**
+		declares whether this view need to be redraw every time.
+	*/
 	reusable : true,
 
 	/** 
@@ -79,6 +82,16 @@ var top_view = {
 				$label({html:d.country,url:url}),
 			],list);
 		}
+		var f = function(e){
+			console.log("exec",e);
+		};
+
+		var ff = f.toString();
+		console.log(ff);
+		var vv = 1;
+		eval("("+ff+")(vv)");
+
+		console.log(JSON.stringify({"v":ff}));
 	},
 
 	/**
@@ -89,6 +102,10 @@ var top_view = {
 		*/
 	drawFooter : function(footer){
 		$app.drawFooter(footer);
+		var outer = $div("12345",footer).bind('click',function(e){
+			console.log(this.tagName,e.target.tagName);
+		});
+		$label("9999",outer);
 	},
 	onActive: function(popup){
 		console.log("onActive",popup.name);

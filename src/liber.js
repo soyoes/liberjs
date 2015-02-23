@@ -30,19 +30,6 @@ $browser = (function(){
     	if($app.onError)
     		$app.onError("unsupported_error");
     }
-    //TODO remove these. since we do not support IE9 anymore.
-    // if(!window.console){//window.console={log:function(v){}};
-    // 	var methods = [
-    // 	     'assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error','exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log',
-    // 	     'markTimeline', 'profile', 'profileEnd', 'table', 'time', 'timeEnd','timeStamp', 'trace', 'warn'
-    // 	     ],dummy = function(){},len = methods.length,
-    // 	    console = (window.console = window.console || {});
-    // 	    for(var i=0;i<len;i++){
-    // 	    	if (!console[methods[i]]) {
-	   //         		console[methods[i]] = dummy;
-	   //         	}
-    // 	    }
-    // }
     return browser;
 })();
 
@@ -965,14 +952,65 @@ var __element = {
 		return this;
 	},
 
+	handle : function(e){
+		e = e||window.event;
+		var t = this || e.target||e.srcElement,
+			type = e.type,
+			handlers = t.attr("__on"+type);
+		if($browser.device=="smartphone"){
+			switch(type){
+				case "touchstart":
+					this.attr("__touchSX",e.changedTouches[0].pageX);
+        			this.attr("__touchSY",e.changedTouches[0].pageY);
+        			break;
+				case "touchend":
+					var th = JSON.parse(t.attr("__ontap")),
+						x = e.changedTouches[0].pageX,
+						y = e.changedTouches[0].pageY,
+						ox = parseFloat(this.attr("__touchSX")),
+						oy = parseFloat(this.attr("__touchSY"));
+					if(th && th.length>0 && Math.abs(ox-x) + Math.abs(oy-y)<=10){
+						for(var i=th.length-1;i>=0;i--){
+							var o = eval("("+th[i]+")");
+							if(o) o.call(t, e);
+						}
+					};
+					this.removeAttribute("__touchSX");
+					this.removeAttribute("__touchSY");
+					break;
+				default:break;
+			}
+		}
+		if(handlers){
+			handlers = JSON.parse(handlers);
+			for(var i=handlers.length-1;i>=0;i--){
+				var o = eval("("+handlers[i]+")");
+				if(o) o.call(t, e);
+			}
+		}
+	},
+
 	find : function(q){var qs=q.split(" "),qu=qs[qs.length-1];var r=this.querySelectorAll(q);return qu.indexOf("#")==0?r[0]:r;},
 	
 	bind : function(arg1, arg2){
 		if(typeof(arg1)=="string"){
-			//if(arg1=="click"&&$browser.device=="smartphone")arg1=this.getAttribute("touch")||"touchstart";
+			//if(arg1=="click"&&$browser.device=="smartphone")arg1=this.getAttribute("touch")||"touchstart";		
 			if(arg2){
 				arg1 = arg1.replace(/^on/,'');
-				this.addEventListener(arg1,arg2,false); //NO IE8 support any longer
+				var curr = this.attr("__on"+arg1);
+				//if(curr) this.removeEventListener(arg1,curr);
+				var code = arg2.toString();
+				if(!curr) curr = [code];
+				else {
+					curr = JSON.parse(curr);
+					curr.push(code);
+				}
+				this.attr("__on"+arg1, JSON.stringify(curr));
+
+				var es = ((arg1=="tap"||arg1=="touch")&&$browser.device=="smartphone")?["touchstart","touchend"]:[arg1];
+				for(var i=0;i<es.length;i++){
+					this.addEventListener(es[i],this.handle,false); //NO IE8 support any longer	
+				}
 			}
 		}else if(typeof(arg1)=="object" && !arg2){
 			for(var f in arg1){
@@ -984,9 +1022,9 @@ var __element = {
 	},
 
 	unbind : function(evname){
-		if(this.removeEventListener){
-			//TODO
-		}
+		// this.attr("__on"+evname,false);
+		this.removeAttribute("__on"+evname);
+		return this;
 	},
 
 	/**
