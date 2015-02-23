@@ -3,119 +3,93 @@
  * @Copywrite (c) 2013, Liberhood, http://liberhood.com 
  * @URL : https://github.com/soyoes/liberjs
  * @license : MIT License
- *
- * TODO : unbind
  * 
  */
 
-var __packages = "",
-	$this,//current view;
-	$conf=$conf||{},
-	__layerIDX=0,
-	__layers=[],
-	__args=null,
-	__runtimeIdx=0,
-	__={},/**runtimes variables will be deleted in ?ms */
-	__set=function(k,v,ms){__[k] = v;ms=ms||300;$.setTimeout(function(key){delete __[key];}, ms, k);},
-	__clear=function(){__={};},
-	__eventMatchers = {
-		'HTMLEvents': /^(?:load|unload|abort|error|select|change|submit|reset|focus|blur|resize|scroll)$/,
-		'MouseEvents': /^(?:click|dblclick|mouse(?:down|up|over|move|out))$/
-	},
-	__eventDefaultOptions = {
-		pointerX: 0,
-		pointerY: 0,
-		button: 0,
-		ctrlKey: false,
-		altKey: false,
-		shiftKey: false,
-		metaKey: false,
-		bubbles: true,
-		cancelable: true
-	},
-    stopPropagation = function(e) {
-        e = e || window.event;
-        if (e.stopPropagation)
-            e.stopPropagation();
-        e.cancelBubble = false;
-    },
-	preventDefault = function(e) {
-        e = e || window.event;
-        if (e.preventDefault)
-            e.preventDefault();
-        e.returnValue = false;
-    },
-    /**
-     * @return {
-     * 	name:
-     * 	version:float
-     * 	device: smartphone|pc
-     * 	os: windows|mac|linux 
-     * }
-     * */
-	$browser = (function(){
-	    var N= navigator.appName, ua= navigator.userAgent, tem;
-	    var M= ua.match(/(opera|chrome|safari|firefox|msie)\/?\s*(\.?\d+(\.\d+)*)/i);
-	    if(M && (tem= ua.match(/version\/([\.\d]+)/i))!= null) M[2]= tem[1];
-	    M= M? [M[1], M[2]]: [N, navigator.appVersion, 0];
-	    var isSM = ua.match(/(iPhone|iPod|Android)/i);//TODO : blackberry
-	    //if(isSM){$.include("liber.sm");}
-	    var browser = {name:M[0], version:parseInt(M[1]), device:isSM?"smartphone":"pc"};
-	    /*
-	     * with(document.createElement("b")){id=7;while(innerHTML="<!--[if gt IE "+ (++id)+"]>1<![endif]-->",innerHTML>0);browser.version=id>8?+id:0}
-	     * if(browser.name=="MSIE"&&browser.version<9&&_IE_VER&&9==_IE_VER)
-	    	browser.version = 9;
-	    */
-	    var av=navigator.appVersion;
-	    var osnames = {"Win":"windows","Mac":"mac","X11":"linux","Linux":"linux"};
-	    for(var k in osnames){if(av.indexOf(k)>=0){browser.os = osnames[k]; break;}}
-	    if(browser.name=="MSIE"&&ua.indexOf("Trident/5.0")>0){
-	    	browser.version = 9;	
-	    	if($conf.redirect_ie9)
-	    		location.href=$conf.redirect_ie9;
-	    }
-	    if(!window.console){//window.console={log:function(v){}};
-	    	var methods = [
-	    	     'assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error','exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log',
-	    	     'markTimeline', 'profile', 'profileEnd', 'table', 'time', 'timeEnd','timeStamp', 'trace', 'warn'
-	    	     ],dummy = function(){},len = methods.length,
-	    	    console = (window.console = window.console || {});
-	    	    for(var i=0;i<len;i++){
-	    	    	if (!console[methods[i]]) {
-    	           		console[methods[i]] = dummy;
-    	           	}
-	    	    }
-	    }
-	    return browser;
-	})();
-	
-	
+
+$conf=$conf||{};
+/**
+ * @return {
+ * 	name:
+ * 	version:float
+ * 	device: smartphone|pc
+ * 	os: windows|mac|linux 
+ * }
+ * */
+$browser = (function(){
+    var N= navigator.appName, ua= navigator.userAgent, tem;
+    var M= ua.match(/(opera|chrome|safari|firefox|msie)\/?\s*(\.?\d+(\.\d+)*)/i);
+    if(M && (tem= ua.match(/version\/([\.\d]+)/i))!= null) M[2]= tem[1];
+    M= M? [M[1], M[2]]: [N, navigator.appVersion, 0];
+    var isSM = ua.match(/(iPhone|iPod|Android)/i);//TODO : blackberry
+    var browser = {name:M[0], version:parseInt(M[1]), device:isSM?"smartphone":"pc"};
+    var av=navigator.appVersion;
+    var osnames = {"Win":"windows","Mac":"mac","X11":"linux","Linux":"linux"};
+    for(var k in osnames){if(av.indexOf(k)>=0){browser.os = osnames[k]; break;}}
+    if(browser.name=="MSIE"&&!window.atob){ //IE ver<=9, TODO add other browser check
+    	if($app.onError)
+    		$app.onError("unsupported_error");
+    }
+    //TODO remove these. since we do not support IE9 anymore.
+    // if(!window.console){//window.console={log:function(v){}};
+    // 	var methods = [
+    // 	     'assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error','exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log',
+    // 	     'markTimeline', 'profile', 'profileEnd', 'table', 'time', 'timeEnd','timeStamp', 'trace', 'warn'
+    // 	     ],dummy = function(){},len = methods.length,
+    // 	    console = (window.console = window.console || {});
+    // 	    for(var i=0;i<len;i++){
+    // 	    	if (!console[methods[i]]) {
+	   //         		console[methods[i]] = dummy;
+	   //         	}
+    // 	    }
+    // }
+    return browser;
+})();
+
+function $id(domid){
+	var usingView = ($app.status === "loaded" && $this && $this.layer);
+	return (usingView) ? $this.layer.find("#"+domid):document.getElementById(domid);
+}
 /* shot cuts */
 // if(!$) //to support jquery
-function $(query,each,allLayer){
-	var res;
-	if(allLayer == undefined) allLayer = $conf.query_all_layer==undefined?true:$conf.query_all_layer; 
-	if(allLayer && query.indexOf(' ')<0){/* querySelectorAll is not as fast as we wish.*/
-		if(query.charAt(0)=="#")
-			return document.getElementById(query.replace("#",""));
-		res = document.querySelectorAll(query);
-	}else{
-		//query=!allLayer?"#layer_"+(__layerIDX-1)+" "+query:query;//FIXME __layerIDX -> lastLayer.idx
-		query=!allLayer?"#"+$this.id+" "+query:query;
-		var qs = query.trim().split(" ");
-		var lastq = qs[qs.length-1];
-		res = document.querySelectorAll(query);
-		if(lastq.charAt(0)=="#")return res[0];
+$ = function(query,each){
+	var usingView = ($app.status === "loaded" && $this && $this.layer);
+	var res = usingView? $this.layer.find(query):document.querySelectorAll(query);
+	if(res){
+		if(each) res.each(each);
+		var qs=query.split(" "),qu=qs[qs.length-1];
+		res = qu.indexOf("#")==0? res[0]:res;
 	}
-	if(each && res)
-		res.each(each);
 	return res;
 }
-function $id(domid, allLayer){
-	if(allLayer==undefined)
-		allLayer = $conf.query_all_layer?true:false; 
-	return (allLayer) ? document.getElementById(domid):$("#"+domid,null,allLayer);
-}
+
+$.args=null,
+$.__runtimeIdx=0,
+$.__events = {
+	'HTMLEvents': /^(?:load|unload|abort|error|select|change|submit|reset|focus|blur|resize|scroll)$/,
+	'MouseEvents': /^(?:click|dblclick|touch(start|end|up|cancel)|mouse(?:down|up|over|move|out))$/
+},
+$.__eventOpts = {
+	pointerX: 0,
+	pointerY: 0,
+	button: 0,
+	ctrlKey: false,
+	altKey: false,
+	shiftKey: false,
+	metaKey: false,
+	bubbles: true,
+	cancelable: true
+},
+$.__HTML_ESC={ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;' };
+$.__HTML_UESC={ '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#x27;': "'" };
+
+__={},/**runtimes variables will be deleted in ?ms */
+__set=function(k,v,ms){__[k] = v;ms=ms||300;setTimeout(function(key){delete __[key];}, ms, k);},
+__clear=function(){__={};};
+
+var $this;//current view.
+
+
 $.isArray = function(v){
 	return Object.prototype.toString.call(v) === '[object Array]';
 }
@@ -135,15 +109,14 @@ $.isElement = function(obj) {
 			(typeof obj.ownerDocument ==="object");
   	}
 }
-$.isNumber = function(n) {return !isNaN(parseFloat(n)) && isFinite(n);}
+$.isNumber = function(n){return !isNaN(parseFloat(n)) && isFinite(n);}
+$.isString = function(o){return typeof o == 'string' || o instanceof String;}
+$.isObject = function(o){return typeof o === "object";}
 $.keys=function(obj){
-	var s = [];for(var k in obj){s.push(k);}return s;
+	var s = [];if($.isObject(obj))for(var k in obj){s.push(k);}return s;
 };
 $.values=function(obj){
 	var s = [];for(var k in obj){s.push(obj[k]);}return s;
-};
-$.firstKey=function(obj){
-	for(var k in obj)return k;
 };
 $.unique=function(arr){
 	var a = [];for(var i in arr){if(a.indexOf(arr[i])<0)a.push(arr[i]);} return a;
@@ -168,24 +141,14 @@ $.range = function(arr,col){
 	}
 	return [min,max];
 }
-//sort arr
-$.sort = function(arr,col){
-	if(!arr)return false;
-	return arr.sort(function(a,b){
-		if(!col)return b>a?-1:(b==a?0:1);
-		else
-			return b[col]>a[col]?-1:(b[col]==a[col]?0:1);
-	});
-}
-
 
 /**
 * @param : get JS params
 */
 $.getArguments = function(){
-	if(__args)return __args;
+	if($.args)return $.args;
 	var scripts = document.getElementsByTagName("script");
-	__args = {};
+	$.args = {};
 	for(var i in scripts){
 		var sc = scripts[i];
 		if(sc.src.indexOf('liber.js')>=0){
@@ -196,10 +159,10 @@ $.getArguments = function(){
 				pstrs = pstr.split('&');
 				for(var j in pstrs){
 					var parts = pstrs[j].split('=');
-					__args[parts[0]] = parts[1];
+					$.args[parts[0]] = parts[1];
 				}
 			}
-			return __args;
+			return $.args;
 		}
 	}
 }
@@ -235,28 +198,6 @@ $.serialize = function(params,rowSpliter,kvSpliter) {
 	return pairs.join(rowSpliter);
 }
 
-$.serializeForm = function (form) {
-    var obj = {};
-    var elements = form.querySelectorAll("input, select, textarea");
-    for( var i = 0; i < elements.length; ++i ) {
-        var element = elements[i];
-        var name = element.name;
-        var value = element.value;
-
-        if ((element.type == "checkbox" || element.type == "radio") && !element.checked)
-            continue;
-        if (name) {
-            if (obj[name]) {
-                if (!$.isArray(obj[name]))
-                    obj[name] = [obj[name]];
-                obj[name].push(value);
-            } else
-            obj[name] = value;
-        }
-    }
-    return obj;
-};
-
 /**
  * preload image list (or css|font)
  * */
@@ -274,19 +215,6 @@ $.preload = function(files, onfileLoad, onfileError){
     	img.src = f;
     }
 }
-$.setTimeout = function(func, delay, params){
-	if ($browser.name=="Firefox"){
-		var timefunc = func;
-		setTimeout(timefunc,delay, params);
-	} else if($browser.name=="MSIE"){
-		setTimeout( (function(params) {
-		    return function() {
-		        func(params);
-		    };
-		})(params) , delay);
-	}else
-		setTimeout(func, delay,params);
-};
 $.keyCode = function(e){
 	if(document.all)
     	return e.keyCode;
@@ -296,25 +224,11 @@ $.keyCode = function(e){
     	return e.which;
 }
 
-$.empty = function(o) {
-	if(!o)return true;
-	if(o.length && o.length==0)return false;
-	if (typeof(o) === "object"){
-		for(var _p in o) {
-			return false;
-		}
-		return true;
-	}
-	return false;
-}
 $.clone = function(o){
-	if(typeof(o)=="object"){
-		var ob = {};
-		for(var k in o)ob[k]=o[k];
-		return ob;
-	}else if($.isArray(o)){
+	if(typeof(o)==="object")
+		return JSON.parse(JSON.stringify(o));
+	else if($.isArray(o))
 		return o.slice(0);
-	}
 	return o;
 }
 $.include = function(src, callback,params){
@@ -337,10 +251,9 @@ $.include = function(src, callback,params){
 			
 			if(t.readyState == "loading")
 				return;
-			//console.log("load "+t.src);
-			
 			if(e.type=="error"){
-				//console.log("ERROR : Failed to load "+t.src);
+				if($app.onError)$app.onError("app_include_error",t.src);
+				throw new Error("ERROR : Failed to load "+t.src);
 			}
 			t.onload = t.onreadystatechange = null;
 			$app.__included.push(t.id);
@@ -376,61 +289,59 @@ $.include = function(src, callback,params){
 	}
 }
 
-$.archivePath = function(id, devider){
-	var res = parseInt(id)%parseInt(devider);
-	return [res,id].join("/");
-}
 $.extend = function(destination, source) {
-    for (var property in source)
-      if(!(property in destination)) destination[property] = source[property];
+    for (var f in source)
+     	if(!(f in destination)) destination[f] = source[f];
     return destination;
 }
 
-$.fire = function(el, eventName){
-	el = typeof(el)=="string" ? $id(el):el;
-	if(el == undefined)
-		return;
-    var options = $.extend(__eventDefaultOptions, arguments[2] || {});
-    	oEvent=null, eventType = null;
-    for (var name in __eventMatchers){
-        if (__eventMatchers[name].test(eventName)) { eventType = name; break; }
-    }
-    if (!eventType)
-        throw new SyntaxError('Only HTMLEvents and MouseEvents interfaces are supported');
-    if(el[eventName]){
-    	el[eventName]();
-    }else if (document.createEvent){
-        oEvent = document.createEvent(eventType);
-        if (eventType == 'HTMLEvents'){
-            oEvent.initEvent(eventName, options.bubbles, options.cancelable);
-        }else{
-            oEvent.initMouseEvent(eventName, options.bubbles, options.cancelable, document.defaultView,
-            		options.button, options.pointerX, options.pointerY, options.pointerX, options.pointerY,
-            		options.ctrlKey, options.altKey, options.shiftKey, options.metaKey, options.button, el);
-        }
-        el.dispatchEvent(oEvent);
-    }else{
-        options.clientX = options.pointerX;
-        options.clientY = options.pointerY;
-        var evt = document.createEventObject();
-        oEvent = $.extend(evt, options);
-        el.fireEvent('on' + eventName, oEvent);
-    }
-    return el;
-}
+// $.fire = function(el, eventName){
+// 	el = typeof(el)=="string" ? $id(el):el;
+// 	if(el == undefined)
+// 		return;
+//     var opt = $.extend($.__eventOpts, arguments[2] || {});
+//     	oe=null, etype = null;
+//     for (var name in $.__events){
+//         if ($.__events[name].test(eventName)) { etype = name; break; }
+//     }
+//     if (!etype){
+//     	if($app.onError)$app.onError("event_fire_error",{name:eventName});
+//     	throw new SyntaxError('Only HTMLEvents and MouseEvents interfaces are supported');
+//     }
+//     if(el[eventName]){
+//     	el[eventName]();
+//     }else if (document.createEvent){
+//         oe = document.createEvent(etype);
+//         if (etype == 'HTMLEvents'){
+//             oe.initEvent(eventName, opt.bubbles, opt.cancelable);
+//         }else{
+//             oe.initMouseEvent(eventName, opt.bubbles, opt.cancelable, document.defaultView,
+//             		opt.button, opt.pointerX, opt.pointerY, opt.pointerX, opt.pointerY,
+//             		opt.ctrlKey, opt.altKey, opt.shiftKey, opt.metaKey, opt.button, el);
+//         }
+//         el.dispatchEvent(oe);
+//     }else{
+//         opt.clientX = opt.pointerX;
+//         opt.clientY = opt.pointerY;
+//         var evt = document.createEventObject();
+//         oe = $.extend(evt, opt);
+//         el.fireEvent('on' + eventName, oe);
+//     }
+//     return el;
+// }
 /**
  * send log to dummy url log.html. for apache log analyzing.
  * 
- * $conf.log_url = "/log.php"
+ * $conf.log_path = "/log.php"
  * $.log("my_action"); => /log.php?action=my_view:$UID:my_action
  *  
  */
 $.log = function(action){
-	if(!$conf.log_url)return;
+	if(!$conf.log_path)return;
 	var uid=$app.userId || "0";
 	action=[$this.name, uid, action].join(":");
 	if($http)
-		$http.get([log_url+"?action=",action].join(""));
+		$http.get([log_path+"?action=",action].join(""));
 };
 $.rand = function(min, max) {
 	var argc = arguments.length;
@@ -443,81 +354,174 @@ $.rand = function(min, max) {
 	}
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 };
-
-var $html = {
-	entityMap: {
-		escape:   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;' },
-		unescape: { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#x27;': "'" }
-    },
-    escape: function(str) {
-    	if (str === null || str === undefined) return '';
-    	var _this = this;
-    	var regexp = new RegExp('[' + $.keys(_this.entityMap.escape).join('') + ']', 'g');
-    	return ("" + str).replace(regexp, function(m) { return _this.entityMap.escape[m]; });
-    },
-    unescape: function(str) {
-    	if (str === null || str === undefined) return '';
-    	var _this = this;
-    	var regexp = new RegExp('(' + $.keys(_this.entityMap.unescape).join('|') + ')', 'g');
-    	return ("" + str).replace(regexp, function(m) { return _this.entityMap.unescape[m]; });
-    }
+/**
+ * generate key string with specified length, and character set.
+ * @param  $len: length of the key
+ * @param  $chars: charactor set string
+ * @return a key string
+ * @example
+ *  keygen(64, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.;,-$%()!@")
+ */
+$.keygen = function(len,chars){
+	len = len||16;
+	chars = chars||"abcdefghijklmnopqrstuvwxyz0123456789_.;,-$%()!@";
+	var keys=[],clen=chars.length;
+	for(var i=0;i<len;i++){
+		keys.push(chars[$.rand(0,clen-1)]);
+	}
+	return keys.join('');
+}
+/**
+ * generate uuid 
+ * @return {[type]} [description]
+ */
+$.uuid = function(){
+	var d = new Date().getTime();
+    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = (d + Math.random()*16)%16 | 0;
+        d = Math.floor(d/16);
+        return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+    });
+    return uuid;
 };
 
+
+$.documentHeight = function() {
+	var d = document.documentElement ? document.documentElement:document.body;
+	return Math.max(d.scrollHeight, d.offsetHeight,d.clientHeight);
+}
+$.screenWidth = function(){
+	return  window.innerWidth|| document.documentElement.clientWidth|| document.getElementsByTagName('body')[0].clientWidth;
+}
+$.screenHeight = function(){
+    return  window.innerHeight|| document.documentElement.clientHeight|| document.getElementsByTagName('body')[0].clientHeight;
+}
+	
+	
+/**
+* return mouse position;
+*/
+$.cursor = function(e,target){
+	$.__mouseX=0;$.__mouseY=0;
+	if (e.pageX || e.pageY) { 
+		$.__mouseX = e.pageX;
+		$.__mouseY = e.pageY;
+	} else { 
+		$.__mouseX = e.clientX + document.body.scrollLeft; 
+		$.__mouseY = e.clientY + document.body.scrollTop; 
+	} 
+	return {x:$.__mouseX,y:$.__mouseY};
+}
+$.inRect = function(point, rect){
+	return point.x>=rect.left && point.x<=rect.left+rect.width
+			&& point.y>=rect.top && point.y<=rect.top+rect.height;
+}
+
+
+/**
+ * show file/image upload window
+ * example:
+ * */
+$.uploadWindow = function(callback,multiple){
+	var fname = "__tmpFileForm", iname="__tmpFileBtn";
+	var imgform = $id(fname,true);
+	if(imgform==undefined){
+		imgform = $form({id:fname, enctype:"multipart/form-data"}, document.body).css({border:'0px',height:'0px',width:'0px',display:"none"});
+		var params = {id:iname,type:"file", name:"tempfile"};
+		if(multiple) params["multiple"] = "multiple";
+		var ipt = $input(params,imgform);
+		/*evType = $browser.name=="MSIE"&&$browser.version<9 ? "focus":"change";*/
+		ipt.bind("change",callback);
+		$.fire(ipt,"click");
+	}else{
+		imgform.style.display = "block";
+		$.fire(iname,"click");
+		setTimeout(function(){
+			$id(fname,true).style.display = "none";
+		},100);
+	}
+}
+
+
 var $app = {
+	status : "normal",
+	viewIdx : 1,
+	views : [],
 	start : function(start_view){
+		if($app.status=="stopped")
+			throw new Error("This app has been stopped for some reason.");
+		$app.start_view = $.isString(start_view)?start_view:$conf.default_view;
+		if(!$app.start_view){
+			if($app.onError)$app.onError("no_start_view_error");
+			throw new Error("No start view"); return;
+		}
 		var __default = {
 			modules : [],
 			liber_path : "/js/"
 		};
-		$app.start_view = start_view;
-		for(var i in __default){
+		for(var i in __default)
 			if(!$conf[i])$conf[i]=__default[i];
-		}
-		var lo = ($conf.layout)?$conf.layout:($browser.device=="smartphone"?"grids":"overlay");
-		$conf.modules.push("liber.layout."+lo);
-		
-		var images = $conf.preload_images?$conf.preload_images:[];
 
+		//init history handler
+		window.onhashchange = function (e) {
+			var hash = window.location.hash;;
+			// console.log("History:",hash);
+			if(hash.startsWith("#")){
+				hash = hash.replace(/^#/,"");
+				if(hash.match(/^~/)){
+					var func = hash.replace(/^~/,"");
+					try{eval(func+"()");}catch(ex){
+						if($app.onError) $app.onError("wrong_func_url_error");
+					}	
+				}else{
+					var vname = hash.split("?")[0];
+					if(window[vname] && window[vname].drawContent)
+						$app.openView(hash);
+				}
+			}
+		};
+
+		//preload
+		var images = $conf.preload_images?$conf.preload_images:[];
 		var loadFiles = $conf.modules.length+images.length, loadedFiles=0;
+		if(loadFiles==0)
+			return $app.preloaded();
 		var step = function(){
 			loadedFiles++;
 			var progress = parseInt(loadedFiles*100/loadFiles);
-			if($app.progressBar && $app.progressBar.update)
-				$app.progressBar.update(progress);
-			if(progress>=100){
+			if($app.onLoadProgress)
+				$app.onLoadProgress(progress);
+			if(progress>=100)
 				$app.preloaded();
-			}
 		}; 
-		for(var i in $conf.modules){
+		for(var i in $conf.modules)
 			$.include($conf.modules[i], step, $conf.modules[i]);
-		}
-		if(images.length>0){
+		if(images.length>0)
 			$.preload(images, step, step);
-		}
-		
 	},
-	
+	stop : function(){
+		$app.status = "stopped";
+		$("body > article.layer", function(a){a.parentNode.removeChild(a);})
+	},
 	preloaded : function(){
-		if($app.layout)
-			$app.layout.init(document.body, $app, $conf.layout_options||{});
-		if($app.onload)
-			$app.onload();
-		else{
-			$app.loaded();
-		}
+		if($app.onload) $app.onload();
+		else $app.loaded();
 	},
 	loaded : function(){
-		var v = (typeof($app.start_view)=="string")?$app.start_view: $conf.default_view;
-		$app.loadView(v, true);
+		$app.status = "loaded";
+		// console.log("loaded:",$app.start_view);
+		$app.openView($app.start_view);
 	},
-	handle : function(type, data){
+	handle : function(type, view){
 		switch(type){
+			case "stop":
+				return $app.stop();
 			case "loaded":
-				$app.drawView();
-				break;
-			case "redirect":
-				$app.loadView(data,true);
-				break;
+				return $app.drawView(view);
+			case "close":
+				return $app.closeView(view);
+			case "front":
+				return $app.bringViewToFront(view);
 			default:
 				break;
 		}
@@ -525,123 +529,192 @@ var $app = {
 	trans : function(e){
 		e = e||window.event;
 		var target = e.target||e.srcElement;
-		if(target){
-			var url = target.getAttribute("url");
-			if(url){
-				$app.loadView(url, target.tagName!="a");
+		var url = target.getAttribute("url");
+		if(url && $.isString(url)){
+			// console.log(url, target.tagName);
+			if(url.match(/@\?*/g)) //is popup
+				$app.openView(url.replace('@?','?'), true);
+			else {
+				if(target.tagName!="A")
+					$a({href:"#"+url, html:"_"},document.body).css({opacity:0}).fire("click");
+					// .onload = function(e){
+					// 	e = e||window.event;var t=e.target||e.srcElement;
+					// 	console.log("a.onload",t);
+					// 	t.fire("click");
+					// };
+				else
+					target.fire("click");	
 			}
 		}
 	},
-	loadView : function(url, updateHistory){
-		url = url || $conf.default_view;
-		if(url){
+	openView : function(url, popup){
+		// console.log("openview",url);
+		if(url && $.isString(url)){
 			if(url.indexOf("http:")==0 || url.indexOf("https:")==0){
-				location.href = url;
-				return;
-			}else{
-				var params = $.unserialize(url);
-				var viewname = url.split("?")[0];
-				$app.view = viewname;
-				var view = $controller.enhance(viewname);
+				return location.href = url;
+			}else{//init view 
+				var params = $.unserialize(url),
+					vname = url.split("?")[0],
+					opener = $this;
+				if(vname.endsWith("@")) {
+					popup = true;
+					vname = vname.substring(0,vname.length-1);
+				}
+				var view = window[vname];
 				if(!view){
-					throw new Error("100 : "+viewname+" does not exist");
-					return;
+					if($app.onError)$app.onError("view_not_exists_error", {name:vname});
+					throw new Error("Error :no view("+vname+") to enhance");
 				}
-				$this = view;
-				var loc = location.href.toString();
-				if(updateHistory && ( loc.indexOf("#"+url, loc.length - url.length-1) !== -1 ) )
-					$history.push(url);
+				if(!view.close || !view.loaded){
+					view.name = view.name|| vname;
+					$.extend(view, $controller);
+				}
 				view.params = params;
-				if(view.onload){
-					view.onload(params);
-				}else{
+				if(popup && opener)
+					view.opener = opener.name;
+				$this = view;
+				$app.views.push(vname);	
+				if(opener && opener.onInactive) 
+					opener.onInactive.call(opener,view);
+				if(view.onLoad)
+					view.onLoad.call(view,params);
+				else
 					view.loaded();//$controller.loaded
-				}
 			}
+		}else{
+			if($app.onError)$app.onError("unsupported_url_type_error",{url:url});
+			throw new Error("ERROR : $app.openView requires string type url");			
 		}
 	},
-	
 	drawView : function(view){
-		view = view || $app.view;
-		view = typeof(view)=="string" ? window[view]:view;
-		if(!view){
-			$app.closeView($app.view);
-			return;
+		if(!view) return; //FIXME
+		if(view.reusable && view.layer){//FIXME
+			$app.bringViewToFront(view);
+			if(view.onActive) {
+				view.onActive.call(view,$app.last_view? window[$app.last_view]:null);
+				$app.last_view = null;
+			}
+		}else{
+			if(!view.opener)
+				$app.hideOthers(view);
+			view.drawView.call(view, $app.viewIdx++);
 		}
-		$app.layout.drawView(view);
 	},
 	closeView : function(view){
-		view = view || $this;
-		if(typeof(view)=="string") view = window[view];
-		if(!view)return;
-		$app.view = undefined;
-		if($history.views.length>1){
-			$history.views.pop();
+		// console.log("app::closeView",view.name);
+		if(view.onClose)
+			view.onClose();
+		if(view.layer)
+			view.layer.remove();
+		$app.views.pop();
+		if(view.opener){
+			view.opener = false;
+			$app.last_view = view.name;
+		}else{
+			var lv;
+			for(var i=$app.views.length-1;i>=0;i--){
+				var v = window[$app.views[i]];
+				if(v.layer && v.layer.style.display=="none"){
+					lv = v; break;
+				}
+			}
+			lv = lv || window[$app.start_view];
+			lv.layer.show();
 		}
-		var vname = ($history.views.length>1)?$history.views.pop():$history.views[0];
-		$app.view = vname;
-		$this = window[vname];
-		if(view.onclose)
-			view.onclose();
-		$app.layout.closeView(view);
+
+		$this =($app.views.length>=1)? window[$app.views.pop()]:window[$app.start_view];
+
+		if($this && $this.onActive){
+			$this.onActive.call($this,$app.last_view? window[$app.last_view]:null);
+			$app.last_view = null;
+		}
+	},
+
+	bringViewToFront : function(v){
+		// console.log("app::bringViewToFront",view.name);
+		var views = [];
+		for(var i=0;i<$app.views.length;i++)
+			if(v.name != $app.views[i]);
+				views.push($app.views[i]);
+		views.push(v.name);
+		$app.views = views;
+		v.layer.css({display:"block",zIndex:100+($app.viewIdx++)});//.attr({idx:"layer_"+idx});
+	},
+	hideOthers : function(view){
+		// console.log("app::hideOthers",view.name);
+		for(var i=0;i<$app.views.length;i++){
+			var v = window[$app.views[i]];
+			if($app.views[i]!=view.name)
+				//console.log("hide:",v.layer);
+				v.layer.hide();
+		}
 	}
 };
 
 var $controller = {
 	loaded : function(){
-		$app.handle("loaded");
+		// console.log("controller::loaded");
+		$app.handle("loaded",$this);
 	},
 	close : function(){
-		$app.closeView($this);
+		// console.log("controller::close");
+		$app.handle("close",$this);
 	},
-	redirect : function(view){
-		$app.handle("redirect", view);
+	drawView : function(idx){
+		// console.log("controller::drawView");
+		var view = this;
+		var layer = $article({idx:idx,"class":view.opener?"view popup "+view.name:"view "+view.name,view:view.name},document.body);
+		//FIXME
+		layer.css({
+			width: "100%",height: "100%",zIndex:100+idx,position: "absolute",
+			top:'0px',left:'0px',right:'0px',bottom:'0px',margin:'0px',border:'0px',padding:'0px',textAlign:"center"
+		});
+
+		if(!view.noHeader){
+			var h = $header({},layer);
+			h =  view.drawHeader? view.drawHeader.call(view,h,layer):($app.drawHeader? $app.drawHeader(h):h);
+		}
+
+		var c = $section({},layer);
+		if(view.drawContent){
+			if(view.layer)
+				view.layer.remove();
+			view.layer = layer;
+			view.content = c;
+			view.drawContent.call(view, c, layer);
+		}
+		if(!view.noFooter){
+			var f = $footer({},layer);
+			f =  view.drawFooter? view.drawFooter.call(view,f,layer):($app.drawFooter? $app.drawFooter(f):f);
+		}
 	},
-	enhance:function(view){
-		var vname;
-		if(typeof(view)=="string"){
-			vname = view;
-			view = window[vname];
-		}
-		if(!view){
-			throw new Error("101 :no view to enhance");
-			return;
-		}else{
-			view.name = view.name|| vname;
-		}
-		if(!view.__enhanced){
-			$.extend(view, $controller);
-			delete view["enhance"];
-			view.__enhanced = true;
-		}
-		return view;
-	}	
+
+	bringToFront : function(){
+		$app.handle("front",$this);
+	},
 };
 
-/*//console.log("browser",$browser.name,"-",$browser.version);*/
-
-var $history = {
-	views:[],
-	push : function(url){
-		$history.views.push(url.split("?")[0]);
-		$.fire($a({href:"#"+url, html:"_"}), "click");
-	},
-	init: function(){
-		window.onhashchange = function () {
-			var hash = window.location.hash.replace(/^#/,"");
-			//console.log("hash",hash);
-			if(hash.match(/^~/)){
-				var func = hash.replace(/^~/,"");
-				try{
-					eval(func+"()");
-				}catch(ex){}
-			}else{
-				$app.loadView(hash,false);
-			}
-		};
-	}
-};
-$history.init();
+// var $history = {
+// 	views:[],
+// 	push : function(url){
+// 		$history.views.push(url.split("?")[0]);
+// 		$.fire($a({href:"#"+url, html:"_"}), "click");
+// 	},
+// 	init: function(){
+// 		window.onhashchange = function () {
+// 			var hash = window.location.hash.replace(/^#/,"");
+// 			if(hash.match(/^~/)){
+// 				var func = hash.replace(/^~/,"");
+// 				try{
+// 					eval(func+"()");
+// 				}catch(ex){}
+// 			}else{
+// 				$app.openView(hash,false);
+// 			}
+// 		};
+// 	}
+// };
+// $history.init();
 
 String.prototype.ucfirst = function(){
 	return this.charAt(0).toUpperCase()+this.substring(1);
@@ -666,10 +739,7 @@ String.prototype.trim = function() {
     return this.replace(/^\s+|\s+$/g, "");
 };
 String.prototype.CJKLength = function() {
-	var len = 0;
-	var str = escape(this);
-
-	str = str.replace(/%u.{4}/gm,"1");
+	var str = escape(this).replace(/%u.{4}/gm,"1");
 	return str.length;
 };
 String.prototype.splice = function( idx, len, sub ) {
@@ -681,6 +751,17 @@ if (typeof String.prototype.startsWith != 'function') {
 if (typeof String.prototype.endsWith != 'function') {
 	String.prototype.endsWith = function(suffix) { return this.slice(-suffix.length) == suffix; };
 }
+
+String.prototype.escape = function() {
+    var regexp = new RegExp('[' + $.keys($.__HTML_ESC).join('') + ']', 'g');
+    return this.replace(regexp, function(m){return $.__HTML_ESC[m];});
+},
+
+String.prototype.unescape = function() {
+    var regexp = new RegExp('(' + $.keys($.__HTML_UESC).join('|') + ')', 'g');
+    return this.replace(regexp, function(m){return $.__HTML_UESC[m];});
+},
+
 
 NodeList.prototype.each = function(func){
 	if(func) for(var i=0;i<this.length;i++)
@@ -704,6 +785,7 @@ NodeList.prototype.hide = function(k){return this.callfunc("hide");};
 NodeList.prototype.show = function(){return this.callfunc("show");};
 NodeList.prototype.addClass = function(v){return this.callfunc("addClass",v);};
 NodeList.prototype.removeClass = function(v){return this.callfunc("removeClass",v);};
+
 
 var $deltas = {
 	linear : function (progress) {
@@ -783,16 +865,38 @@ var $deltas = {
 
 var __element = {
 		
+	isSvg : function(){
+		window.__svgTagIndex = window.__svgTagIndex||__tags.indexOf('svg');
+		return __tags.indexOf(this.tagName.toLowerCase())>=window.__svgTagIndex;
+	},
+
 	addClass : function(cls) {
-	    if(this.className.indexOf(cls)<0){this.className += " "+cls;}
-	    return this;
+		if(this.isSvg()){
+			var c = this.getAttribute("class")||"";
+			c=c.length>0?c+" ":"";
+			this.setAttribute("class",c+cls);
+		}else
+			if(this.className.indexOf(cls)<0){this.className += " "+cls;}	
+		return this;
 	},
 	
 	removeClass : function(cls) {
 		if(!cls)return this;
 		cls = cls.trim();
-		this.className = this.className.replace(new RegExp("\\s+"+cls+"\\s+","gm")," ").replace(new RegExp("^"+cls+"\\s+","gm"),"").replace(new RegExp("\\s+"+cls+"$","gm"),"");
+		var iS = this.isSvg();
+		var cn = iS?this.getAttribute("class"):this.className;
+		cn = cn.replace(new RegExp("\\b"+cls+"\\b","g"),"").replace(/\s+/g," ");
+		if(iS)
+			this.setAttribute('class',cn);
+		else 
+			this.className = cn;
 	    return this;
+	},
+
+	hasClass : function(cls){
+		var iS = this.isSvg();
+		var cn = iS?this.getAttribute("class"):this.className;
+		return cn&&new RegExp("\\b"+cls+"\\b","g").test(cn);
 	},
 	
 	css : function(arg1,arg2){
@@ -809,7 +913,6 @@ var __element = {
                 return this.style[arg1];
 		}else if(typeof(arg1)=="object" && !arg2){
 			for(var f in arg1){
-				//this.style[f] = arg1[f];
 				this.css(f,arg1[f]);
 			}
 		}
@@ -829,11 +932,13 @@ var __element = {
 			}
 			if(arg1=="html")
 				arg1 = "innerHTML";
-			if(arg1=="class"||arg1=="classname")
+
+			if(!this.isSvg() && (arg1=="class"||arg1=="classname"))
 				arg1 = "className";
-			if(arg1=="url" && typeof(arg2)=="string"){
+
+			if(arg1=="url" && typeof(arg2)=="string")
 				this.bind("click", $app.trans);
-			}
+			
 			if(arg2!=undefined){
 				if(this.tagName.toUpperCase() == "IMG" && arg1.toLowerCase()=="src"){
 					this[arg1] = $conf.image_path && arg2.indexOf("data:image")<0 && arg2.indexOf("http")!=0? $conf.image_path+arg2:arg2;
@@ -841,43 +946,6 @@ var __element = {
 					this[arg1] = arg2;
 				}
 				if(typeof(arg2)!="function" && !$.isBool(arg2)){
-					if(this.tagName == "INPUT"){
-						/*IE8 doeesn't support input.name=xxx*/
-						if($browser.name=="MSIE" && $browser.version<9 && (arg1=="type"||arg1=="name"))
-							return this;
-						/*IE9 doeesn't support input.placeHolder=xxx*/
-						if($browser.name=="MSIE" && $browser.version<10 && arg1=="placeHolder"){
-							this.setAttribute(arg1,arg2);
-							if(!this.value || this.value==""){
-								this.value = arg2;
-								////console.log("value-",this.value);
-								this.style.color = "#999";
-								this.attachEvent("onfocus",function(e){
-									 e = e||window.event;
-									 var ipt = e.target||e.srcElement;
-									 ipt.style.color = "#333";
-						             if (ipt.value == ipt.attr('placeHolder')) {
-						                 ipt.value = "";
-						             }
-						        });
-								this.attachEvent("onblur",function(e){
-									e = e||window.event;
-									var ipt = e.target||e.srcElement;
-									if (ipt.value == '' || ipt.value == ipt.attr('placeHolder')) {
-						                ipt.value = ipt.attr('placeHolder');
-						                ipt.style.color = "#999";
-						            }else{
-						            	ipt.style.color = "#333";
-						            }
-						        });
-							}
-						}
-					}
-					/*
-					if(!this.hasOwnProperty(arg1)){
-						this.setAttribute(arg1,arg2);	
-					}
-					*/
 					if(arg1!="innerHTML"&&arg1!="className"&&arg1!="src") //FIXME check if element has this property
 						this.setAttribute(arg1,arg2);	
 				}
@@ -896,51 +964,118 @@ var __element = {
 		}
 		return this;
 	},
+
+	find : function(q){var qs=q.split(" "),qu=qs[qs.length-1];var r=this.querySelectorAll(q);return qu.indexOf("#")==0?r[0]:r;},
 	
 	bind : function(arg1, arg2){
 		if(typeof(arg1)=="string"){
+			//if(arg1=="click"&&$browser.device=="smartphone")arg1=this.getAttribute("touch")||"touchstart";
 			if(arg2){
 				arg1 = arg1.replace(/^on/,'');
-				if (this.addEventListener)  /* W3C */
-					this.addEventListener(arg1,arg2,false);
-				else if (this.attachEvent) { /* IE */
-					if(typeof(arg2)=="function")
-						this.attachEvent("on"+arg1,arg2);
-					else if(typeof(arg2)=="string")
-						this.setAttribute("on"+arg1,arg2);
-				}else {
-					this["on"+arg1] = arg2;
-				}
+				this.addEventListener(arg1,arg2,false); //NO IE8 support any longer
 			}
 		}else if(typeof(arg1)=="object" && !arg2){
 			for(var f in arg1){
 				f = f.replace(/^on/,'');
-				if (this.addEventListener)  /* W3C */
-					this.addEventListener(f,arg1[f],false);
-				else if (this.attachEvent) { /* IE */
-					this.attachEvent("on"+f,arg1[f]);
-					if(typeof(arg1[f])=="function")
-						this.attachEvent("on"+f,arg1[f]);
-					else if(typeof(arg1[f])=="string")
-						this.setAttribute("on"+f,arg1[f]);
-				}else {
-					this["on"+f] = arg1[f];
-				}
+				this.bind(f,arg1[f]);
 			}
 		}
 		return this;
 	},
-	
-	height : function(){
-		return $ui.height(this);
-	},
-	width : function(){
-		return $ui.width(this);
+
+	unbind : function(evname){
+		if(this.removeEventListener){
+			//TODO
+		}
 	},
 
-	hide : function(){$ui.hide(this);return this;},
-	show : function(){$ui.show(this);return this;},
-	unselectable:function(){$ui.unselectable(this);return this;},
+	/**
+	 * clone a element including childs and append to target.
+	 * @param  target:optional, target to append to 
+	 * @return cloned DOMElement.
+	 */
+	clone : function(target){var c=this.cloneNode(true);if(target)target.appendChild(c);return c;},
+	
+	rect : function(){
+		var scrollTop = (document.documentElement && document.documentElement.scrollTop) || document.body.scrollTop,
+			scrollLeft = (document.documentElement && document.documentElement.scrollLeft) || document.body.scrollLeft;
+		if(this.getBoundingClientRect){
+			var r = this.getBoundingClientRect();//Read only
+			return {top:r.top+scrollTop, width:r.width, left:r.left+scrollLeft, height: r.height};
+		}	
+		var _x = 0,_y = 0,w = this.width(),h = this.height();
+		var el = this;
+	    while( el && !isNaN( el.offsetLeft ) && !isNaN( el.offsetTop ) ) {
+	        _x += el.offsetLeft - el.scrollLeft;
+	        _y += el.offsetTop - el.scrollTop;
+	        el = el.offsetParent;
+	    }
+	    //offsetWidth (includes padding...)
+	    return { top: _y+scrollTop, left: _x+scrollLeft,width:w,height:h};			
+	},
+	
+	height : function(){
+		return Math.max(this.clientHeight||0,this.scrollHeight||0,this.offsetHeight||0);
+	},
+	width : function(){
+		return Math.max(this.clientWidth||0,this.scrollWidth||0,this.offsetWidth||0);
+	},
+
+	hide : function(time){
+		if(this.style.display) this.attr("__orgDisplay",this.style.display);
+		if(time>0)
+			this.animate({duration:time,style:"easeIn",step:function(el,delta){
+				el.style.opacity=1-delta;
+				if(delta>=1){el.style.opacity=1;el.style.display="none";}
+			}});
+		else
+			this.style.display = "none";
+		return this;
+	},
+	show : function(time){
+		if(time>0)
+			this.css({"display":this.attr("__orgDisplay")||"block","opacity":0}).animate({duration:time,style:"easeOut",step:function(el,delta){
+				el.style.opacity=delta;
+				if(delta>=1){el.style.display=el.attr("__orgDisplay")||"block";}
+			}});
+		else
+			this.style.display = this.attr("__orgDisplay")||"block";
+		return this;
+	},
+	toggle : function(time){
+		if(this.style.display=="none") return this.show(time);
+		else return this.hide(time);
+	},
+	remove : function(el){
+		if(this.parentNode)
+			this.parentNode.removeChild(this);
+	},
+	before : function(target) {
+		if($.isElement(target) && target.parentNode)
+			target.parentNode.insertBefore(this,target);
+		//else TODO $app.onError
+		return this;
+	},
+	after : function(target) {
+		if($.isElement(target) && target.parentNode)
+			if(target.nextSibling)
+				target.parentNode.insertBefore(this, target.nextSibling);
+			else
+				target.parentNode.appendChild(this);
+		//else TODO $app.onError
+		return this;
+	},
+	/**
+	 * disable | enable selection of a node.
+	 * @param  string v : none|all|text|element
+	 * @return this node.
+	 */
+	selectable : function(v){
+		v = v===false?"none":(v===true?"all":v);
+		return this.bind("selectstart",function(e){return e.preventDefault();}).css({"-moz-user-select": v, "-webkit-user-select": v, "-ms-user-select":v, "user-select":v});
+	},
+
+
 	/**
 	 * Animation refactored
 		@delay : time wait to start
@@ -963,7 +1098,7 @@ var __element = {
 		if(opts.delay){
 			var delay = parseInt(opts.delay);
 			delete opts["delay"];
-			$.setTimeout(function(arg){
+			setTimeout(function(arg){
 				if(arg.ele)
 					arg.ele.animate(arg.opts);
 			}, delay, {ele:ele, opts:opts});
@@ -1000,7 +1135,7 @@ var __element = {
 				e = e||window.event;var t=e.target||e.srcElement;
 				var f = eval(t.attr("__over"));
 				if(f && "no"===t.attr("__exec")){t.attr("__exec","yes");f(e,t);}
-				else return preventDefault()&&false;
+				else return e.preventDefault()&&false;
 			}});
 		}
 		if(out){
@@ -1008,9 +1143,9 @@ var __element = {
 			this.bind({mouseout:function(e){
 				e = e||window.event;
 				var t=e.target||e.srcElement;
-				var rect = $ui.rect(t);
-				if($ui.inRect($ui.cursor(e),rect)){
-					return preventDefault()&&false;	
+				var rect = t.rect();
+				if($.inRect($.cursor(e),rect)){
+					return e.preventDefault()&&false;	
 				}else{
 					var out = eval(t.attr("__out"));
 					if(out){t.attr({"__exec":"no"});out(e,t);}
@@ -1018,15 +1153,44 @@ var __element = {
 			}});
 		}
 		return this;
+	},
+	fire : function(eventName, option){
+		var opt = $.extend($.__eventOpts, option || {}),
+    		oe=null, etype = null;
+	    for (var name in $.__events){
+	        if ($.__events[name].test(eventName)) { etype = name; break; }
+	    }
+	    if (!etype){
+	    	if($app.onError)$app.onError("event_fire_error",{name:eventName});
+	    	throw new SyntaxError('Only HTMLEvents and MouseEvents interfaces are supported');
+	    }
+	    if(this[eventName]){
+	    	this[eventName]();
+	    }else if (document.createEvent){//Webkit & FF
+	        oe = document.createEvent(etype);
+	        if (etype === 'HTMLEvents'){
+	            oe.initEvent(eventName, opt.bubbles, opt.cancelable);
+	        }else{
+	            oe.initMouseEvent(eventName, opt.bubbles, opt.cancelable, document.defaultView,
+	            		opt.button, opt.pointerX, opt.pointerY, opt.pointerX, opt.pointerY,
+	            		opt.ctrlKey, opt.altKey, opt.shiftKey, opt.metaKey, opt.button, this);
+	        }
+	        this.dispatchEvent(oe);
+	    }else{//IE
+	        opt.clientX = opt.pointerX;
+	        opt.clientY = opt.pointerY;
+	        var evt = document.createEventObject();
+	        oe = $.extend(evt, opt);
+	        this.fireEvent('on' + eventName, oe);
+	    }
+		return this;
 	}
 };
 
-if($browser.name=="MSIE" &&  $browser.version<9){
-	$.include("liber.ie8");
-}else{
-	if (typeof Element.prototype.animate == 'function') Element.prototype.animate = __element.animate;
-	$.extend(Element.prototype,__element);
-}
+if (typeof Element.prototype.animate == 'function') 
+	Element.prototype.animate = __element.animate;
+$.extend(Element.prototype,__element);
+
 
 /* DOM functions */
 //var $_runtime;
@@ -1047,7 +1211,6 @@ var $e = function(type, args, target, namespace){
 					break;
 			}
 		}else if($.isArray(args)){
-			////console.log("draw array");
 			for(var i in args){
 				if(args[i]!=null){
 					if($.isElement(args[i])){
@@ -1061,12 +1224,11 @@ var $e = function(type, args, target, namespace){
 									thisEl.appendChild(res[_i]);
 							}
 						}else if($.isElement(res)){
-							////console.log(res,_el);
 							thisEl.appendChild(res);
 						}
 						_el = thisEl;
 					}else{
-						////console.log("ERROR : can not append child ",args[i]);
+						if($app.onError)$app.onError("invalid_child_error");
 					}
 				}
 			}
@@ -1101,7 +1263,7 @@ NOT IN USE (Duplicated) : "del" -> "s", "blockquote" -> "q", "ins" -> "u"
 
 Override : "select"(with TODO:"optgroup","option") -> use $select() instead
 Override : "title" -> use $ui.title(str) instead
-Override : "style" -> use $rules(rules, target) instead
+Override : "style" -> use $styles(rules, target) instead
 
 TODO datalist -> for safari
 
@@ -1167,7 +1329,8 @@ for(var i=0;i<__tags.length;i++){
  * 			multiple : 1|0 //1 :select(multi) || checkbox, 0:radio||select(single)
  * 			optionClass: classname of li
  * 			labelClass: classname of li.div
- *			formId : optional 			
+ *			formId : optional 	
+ *			eventType : touchstart | touchend | mouseup | click		
  * 			noLabel:true|false //default=false, hide label text
  * 			drawOption:function(optLI,idx)
  * 		}
@@ -1216,12 +1379,13 @@ var $sel = function(options,attrs,target){
 		container = $div({id:attrs.id},target),
 		list = $ul({id:attrs.id+"-list"},container),
 		idx = 0,
+		eventType = attrs.eventType||"click",
 		drawOpt = attrs.drawOption;
 	for(var v in options){
 		var surfix = (isMulti)?((valuestr.indexOf('#'+v+"#")>=0)?" on":""): ((attrs.value == v)?" on":"");
 		var lOpt = attrs.noLabel==true ? {className:attrs.labelClass?attrs.labelClass+surfix:surfix,html:"&nbsp;"}:{className:attrs.labelClass?attrs.labelClass+surfix:surfix,html:options[v]};
 		var opt = $li([$div(lOpt)],list)
-			.attr({name:attrs.id, value:v,idx:idx, multiple:isMulti?1:0,className:attrs.optionClass?attrs.optionClass+surfix:surfix}).bind("click", window._sel_handler);
+			.attr({name:attrs.id, value:v,idx:idx, multiple:isMulti?1:0,className:attrs.optionClass?attrs.optionClass+surfix:surfix}).bind(eventType, window._sel_handler);
 		if(drawOpt)drawOpt(opt,idx);
 		idx++;
 	}
@@ -1263,368 +1427,34 @@ var $select = function(values,attrs,target){
 /**
  * add css rules runtime.
  * 
- * @param rules = {
+ * @param rules : hash | css string 
+ * @example
+ * $styles({
  * 	".myClass" : {width:30, height:"40px"},
  *  "#myId" : {width:30, height:"40px"},
  * 	...
- * }
+ * },document.head);
+ *
+ * @param target : where to insert
+ * @param id : id of the style tag (optional)
  * 
  * @return new style tag id;
  * */
-var $rules=function(rules,target){
+var $styles=function(rules,target,id){
 	target = target||document.body;
-	var sid = "runtime_rule_"+(++__runtimeIdx),
+	var sid = id?id: "runtime_rule_"+(++$.__runtimeIdx),
 		cs = $e('style',{type:"text/css",id:sid},target);
 	var tn = document.createTextNode("");
-	for(var k in rules){
-		var v = typeof(rules[k])=="string"?rules[k] : $.serialize(rules[k], ";", ":");
-		tn.appendData([k, "{", v, "}\n"].join(""));
+	if(typeof(rules)=="string"){
+		tn.appendData(rules);
+	}else{
+		for(var k in rules){
+			var v = typeof(rules[k])=="string"?rules[k] : $.serialize(rules[k], ";", ":");
+			tn.appendData([k, "{", v, "}\n"].join(""));
+		}
 	}
 	cs.appendChild(tn);
 	return sid;
-};
-
-/**
- * $slider({max:20,min:1,value:5,step:1,name:"my",id:"myk",
- * 			maxLabel:true,minLabel:false,
- * },target)
- * @styles 
- * 	.slider{}	//frame style
- * 	.slider .min-label{}	//label left style
- *  .slider .max-label{}	//label left style
- * 	.slider input{} //bar style
- * 
- * */
-var $slider=function(opt,target){
-	opt = opt||{};
-	opt = $.extend({min:1,max:100,type:"range"},opt);
-	var ipt = $input(opt);
-	var frame = $div({"className":"slider"},target).css({overflow:"hidden"});
-	if(opt.minLabel){
-		$label({html:opt.min,"class":"min-label"},frame);
-	}
-	if(opt.maxLabel){
-		ipt.bind("change",function(e){
-			e = e||window.event;
-			var t = e.srcElement||e.target,v=t.value;
-			while(t.tagName.toUpperCase()!="LABEL")t=t.nextSibling;
-			t.innerHTML = v;
-		});
-		frame.appendChild(ipt);
-		$label({html:opt.value,"class":"max-label"},frame);
-	}else{
-		frame.appendChild(ipt);
-	}
-	return frame;
-};
-
-var $autocomplete = function(datas,opt,target){
-	opt = opt||{};datas=datas||[];
-	if(!opt.id)opt.id="ac-"+(++__runtimeIdx);
-	opt = $.extend({list:"datalist-"+opt.id}, opt);
-	var ipt = $input(opt,target);
-	if($browser.name.toLowerCase()=="safari"){
-		$.include("liber.safari",$_autocomplete,{input:ipt,datas:datas});
-	}else{
-		var l = $e("datalist",{id:"datalist-"+opt.id},target);
-		datas.forEach(function(d,idx){
-			$e("option",{value:d},l);
-		});
-	}
-	return ipt;
-}
-
-
-var $ui = {
-	hide : function(args){
-		if(!args)return;
-		if(typeof(args)=="object"&&args.style){
-			args.style.display = "none";
-			return;
-		}
-		args = (typeof(args)=="string") ? [args]:args;
-		for(var i in args){
-			var d = $id(args[i]);
-			if(d)d.style.display = "none";
-		}
-	},
-	show : function(args){
-		if(!args)return;
-		if(typeof(args)=="object"&&args.style){
-			if(args.className)
-				args.className = args.className.replace("hidden","");
-			args.style.display = "block";
-			return;
-		}
-		args = (typeof(args)=="string") ? [args]:args;
-		for(var i in args){
-			var d = $id(args[i]);
-			if(d)d.style.display = "block";
-		}
-	},
-	toggle : function(args){
-		if(!args)return;
-		if(typeof(args)=="object"&&args.style){
-			args.style.display = args.style.display== "none"?"block":"none";
-			return;
-		}
-		args = (typeof(args)=="string") ? [args]:args;
-		for(var i in args){
-			var d= $id(args[i]);
-			if(d){
-				if(d.className.indexOf("hidden")>=0){
-					d.className  = d.className.replace("hidden","");
-				}else{
-					d.style.display = (d.style.display=="none") ? "block":"none";	
-				}
-			}
-		}	
-	},
-	remove : function(el){
-		if(!el)return;
-		var type = typeof(el);
-		if(type == "function")
-			return;
-		if(type=='string')
-			el = $id(el);
-		if(el && el.parentNode)
-			el.parentNode.removeChild(el);
-	},
-	insertBefore : function(el, target) {
-		el     = $.isElement(el)     ? el     : $id(el);
-		target = $.isElement(target) ? target : $id(target);
-		target.parentNode.insertBefore(el, target);
-	},
-	insertAfter : function(el, target) {
-		el     = $.isElement(el)     ? el     : $id(el);
-		target = $.isElement(target) ? target : $id(target);
-		target.parentNode.insertBefore(el, target.nextSibling);
-	},
-	unselectable : function(el){
-		el.attr({"unselectable":"on"}).bind("selectstart",function(e){return preventDefault(e);}).css({"-moz-user-select": "none", "-webkit-user-select": "none", "-ms-user-select":"none", "user-select":"none"});
-	},
-	documentHeight : function() {
-	    var d = document.documentElement ? document.documentElement:document.body;
-	    return Math.max(d.scrollHeight, d.offsetHeight,d.clientHeight);
-	},
-	screenWidth :function(){
-		return  window.innerWidth|| document.documentElement.clientWidth|| document.getElementsByTagName('body')[0].clientWidth;
-	},
-	screenHeight : function(){
-	    return  window.innerHeight|| document.documentElement.clientHeight|| document.getElementsByTagName('body')[0].clientHeight;
-	},
-	
-	rect : function(el){
-		var scrollTop = (document.documentElement && document.documentElement.scrollTop) || document.body.scrollTop,
-			scrollLeft = (document.documentElement && document.documentElement.scrollLeft) || document.body.scrollLeft;
-		if(el.getBoundingClientRect){
-			var r = el.getBoundingClientRect();//Read only
-			return {top:r.top+scrollTop, width:r.width, left:r.left+scrollLeft, height: r.height};
-		}	
-			
-		var _x = 0,
-	    	_y = 0,
-	    	w = $ui.width(el),
-	    	h = $ui.height(el);
-	    while( el && !isNaN( el.offsetLeft ) && !isNaN( el.offsetTop ) ) {
-	        _x += el.offsetLeft - el.scrollLeft;
-	        _y += el.offsetTop - el.scrollTop;
-	        el = el.offsetParent;
-	    }
-	    //offsetWidth (includes padding...)
-	    return { top: _y+scrollTop, left: _x+scrollLeft,width:w,height:h};			
-	},
-	
-	height : function(el){
-		return el? Math.max(el.clientHeight||0,el.scrollHeight||0,el.offsetHeight||0):0;
-	},
-	width : function(el){
-		return el?Math.max(el.clientWidth||0,el.scrollWidth||0,el.offsetWidth||0):0;
-	},
-	/**
-	* return mouse position;
-	*/
-	cursor : function(e,target){
-		$ui.mouseX=0;$ui.mouseY=0;
-		if (e.pageX || e.pageY) { 
-			$ui.mouseX = e.pageX;
-			$ui.mouseY = e.pageY;
-		} else { 
-			$ui.mouseX = e.clientX + document.body.scrollLeft; 
-			$ui.mouseY = e.clientY + document.body.scrollTop; 
-		} 
-		return {x:$ui.mouseX,y:$ui.mouseY};
-	},
-	inRect : function(point, rect){
-		return point.x>=rect.left && point.x<=rect.left+rect.width
-				&& point.y>=rect.top && point.y<=rect.top+rect.height;
-	},
-	title:function(str){//set document title
-		if(str)document.title = str;
-		return document.title;
-	},
-	addLayer : function(oncreate, params, dontHideOthers){
-		if(!dontHideOthers){
-			for(var i in __layers){
-				$ui.hide(__layers[i]);
-			}
-		}
-		var layer = document.createElement("div");
-		layer.id = "layer_"+__layerIDX;
-		layer.setAttribute("layer",__layerIDX);
-		layer.className = "layer";
-		layer.style.height = $ui.documentHeight();
-		__layers.push(layer);
-		__layerIDX ++;
-		document.body.appendChild(layer);
-		layer.css({
-			width: "100%",height: "100%",zIndex:100+__layerIDX,position: "absolute",
-			top:'0px',left:'0px',right:'0px',bottom:'0px',margin:'0px',border:'0px',padding:'0px',textAlign:"center"
-		});
-		if(oncreate){
-			oncreate(layer,params);
-		}
-	},
-	
-	removeLayer : function(view){
-		var layer = null;
-		if(view){
-			layer = view.layer;
-			if(!layer)
-				return;
-			while(__layers.length>0){
-				var l = __layers.pop();	
-				if(l.id == layer.id){
-					layer.parentNode.removeChild(layer);
-					break;
-				}else if("message"==l.attr("layer-type")){
-					l.parentNode.removeChild(l);
-				}
-			}
-		}else{
-			layer = __layers.pop();	
-			if(layer){
-				layer.parentNode.removeChild(layer);
-			}
-		}
-		$ui.showLastLayer();
-	},
-	
-	showLastLayer : function(){
-		var len = __layers.length;
-		if(len>0){
-			var last = __layers[len-1];
-			if("message"==last.attr("layer-type")){
-				__layers.pop();
-				return $ui.showLastLayer();
-			}
-			if($id(last.id,true)){
-				$ui.show(last);
-				$this = window[last.attr("view")];
-			}else{
-				__layers.pop();
-				return $ui.showLastLayer();
-			}
-		}else{
-			if($conf.default_view){
-				$app.loadView($conf.default_view);
-			}else{
-				window.location = window.location;
-			}
-		}
-	},
-	
-	bringLayerToFront : function(layer){
-		var layers = [];
-		for(var i in __layers){
-			var l = __layers[i];
-			if(l.attr("layer")!=layer.attr("layer")){
-				layers.push(l);
-			}
-		}
-		layers.push(layer);
-		layer.id = "layer_"+__layerIDX;
-		layer.setAttribute("layer",__layerIDX);
-		layer.style.display = "block";
-		layer.style.zIndex = 100+__layerIDX;
-		__layerIDX ++;
-		__layers = layers;
-	},
-	
-	/*
-	* @param content: DOMElement || string
-	* @param params: {
-	* 	width:
-	* 	top:	
-	* 	style:	// message-box class name
-	* 	onDraw: function(popup, params)
-	* } 
-	* 
-	* CSS
-	* 	.layer-popup
-	* 	#popup
-	* 
-	* examples: 
-	*	$ui.popup ("please wait", function(re){blah, blah ...}, {param:1})
-	*	$ui.popup ($div($h1("Message Window")), 2000) // close after 2000ms
-	*/
-	popup : function(content, params){
-		params = params||{};
-		/*show message*/
-		$ui.addLayer(function(layer,params){
-			layer.attr("layer-type","message");
-			layer.className = "layer-popup";
-			var box = $id("popup");
-			var mtop = 240||params.top;
-			var mw = 600||params.width;
-			layer.style.top = "0px";
-			layer.style.height = Math.max($ui.screenHeight(), $ui.height(document.body))+"px";
-			if(!box)box = $div(content,layer)
-				.attr({id:"popup","class":params.style||""})
-				.css({"top":mtop+"px", "position":"fixed", width:mw+"px", left:"50%", marginLeft:"-"+(mw/2)+"px",overflow:"hidden"});
-			var func = params.onDraw;
-			if(func && typeof(func)=="function")
-				func(box,params);
-			else{
-				var time = parseInt(func);
-				if(time>0){
-					$.setTimeout($ui.popupClose,time);
-				}
-			}
-		},params,true);
-	},
-	popupClose : function(time){
-		var box = $id("popup");
-		if(box){
-			if(box.parentNode.getAttribute("layer")){
-				$ui.removeLayer();
-			}else
-				$ui.remove(box);
-		}	
-	},
-	/**
-	 * show file/image upload window
-	 * example:
-	 * */
-	uploadWindow : function(callback,multiple){
-		var fname = "__tmpFileForm", iname="__tmpFileBtn";
-		var imgform = $id(fname,true);
-		if(imgform==undefined){
-			imgform = $form({id:fname, enctype:"multipart/form-data"}, document.body).css({border:'0px',height:'0px',width:'0px',display:"none"});
-			var params = {id:iname,type:"file", name:"tempfile"};
-			if(multiple) params["multiple"] = "multiple";
-			var ipt = $input(params,imgform);
-			/*evType = $browser.name=="MSIE"&&$browser.version<9 ? "focus":"change";*/
-			ipt.bind("change",callback);
-			$.fire(ipt,"click");
-		}else{
-			imgform.style.display = "block";
-			$.fire(iname,"click");
-			$.setTimeout(function(){
-				$id(fname,true).style.display = "none";
-			},100);
-		}
-	}
 };
 
 
@@ -1664,7 +1494,7 @@ var $http = {
 	  						try{
 	  							res = JSON.parse(res);
 	  						}catch(ex){
-	  							//console.log(res);
+	  							if($app.onError)$app.onError("http_parse_error",{data:res});
 	  							return xhr.runtimeParams.callback(null,{message:"json_error", data:res});
 	  						}
 	  					}
@@ -1676,7 +1506,8 @@ var $http = {
 	    				message : xhr.getResponseHeader("ERROR_MESSAGE")
 	    			};
   					if(xhr.runtimeParams.callback)
-  						xhr.runtimeParams.callback(null, errors);		
+  						xhr.runtimeParams.callback(null, errors);	
+  					if($app.onError)$app.onError("http_server_error",errors);	
 	  			}
     		}
   		};
@@ -1696,7 +1527,6 @@ var $http = {
   			}
   		}
   		method =method.toUpperCase();  
-  		//console.log('http send ',method,url,userdata);
   		xhr.open(method,url,true);
   		if(method == 'POST' || method == 'PUT' || method == 'DELETE'){
   			xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");

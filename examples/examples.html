@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LiberJS Examples</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, target-densityDpi=device-dpi">
+    <meta name="description" content="">
+    <link rel="apple-touch-startup-image" href="">
+    <link rel="apple-touch-icon" href="">
+    <link rel="stylesheet" href="css/styles.css" type="text/css" />
+    <script>
+    var $conf={
+        default_view : "top_view",
+        //modules     : ["liber.ui.forms"],
+        image_path  : "images/",
+        liber_path  : "../src/",
+        //layout      : "overlay",
+        query_all_layer : true,
+        //layer_tag : "article",
+        //http_host   : "http://yourhost"
+    };
+    </script>
+    <script src="../src/liber.js"></script>
+    <script src="js/views.js"></script>
+</head>
+<body>
+
+<script>
+window.onload = $app.start;
+// window.onload=function(){
+//     console.log($("div"));
+// }
+</script>
+</body>
+</html>

@@ -1,0 +1,250 @@
+* TODO try to include xxx_view.js if not exists
+	
+* make liber.net work
+	
+* css mask support 
+	http://www.html5rocks.com/en/tutorials/masking/adobe/
+
+* support html columns? to reduce tables
+	-moz-column-rule:3px outset #ff00ff; /* Firefox */
+	-webkit-column-rule:3px outset #ff00ff; /* Safari and Chrome */
+	column-rule
+	column-count:3;
+	column-gap:40px;
+
+
+LiberJS 2.0 ideas
+
+# $conf
+
+	redirect_ie9 			// -> redirect_unsupport_url
+	query_all_layer 	// TODO, find better way
+	preload_image_path  // a relative path of big images/fonts/css to load before rendering
+	preload_images			// an array of images/fonts/css names
+	liber_path				//extenions js files path
+	-log_url
+	+log_path					//server url/relative path to log current actions
+	-layout 					//overlay only
+	modules						//extention names to load
+	
+	-layout_options
+	default_view			//1st view
+	image_path 				//common image relative path, be used in $img/.css("background",)
+	-layer_tag  //use article->header+section+footer
+	http_host 				//server url for $http module.
+
+# extentions
+
+	String.prototype.ucfirst //=php ucfirst
+	String.prototype.toHex   //str to hex string
+	String.prototype.getByte //return how many bytes in this str.
+	String.prototype.trim    //trim 
+	String.prototype.CJKLength 
+	String.prototype.splice  //insert str into str
+	String.prototype.startsWith 
+	String.prototype.endsWith
+	+?String.prototype.unserialize //$.unserialize, url str to obj
+
+	NodeList.prototype.each  
+	NodeList.prototype.callfunc //private
+	NodeList.prototype.attr
+	NodeList.prototype.css
+	NodeList.prototype.bind
+	NodeList.prototype.unbind //TODO
+	NodeList.prototype.hide
+	NodeList.prototype.show
+	NodeList.prototype.addClass
+	NodeList.prototype.removeClass
+
+	+?Array.prototype.range  //get max/min values of arr
+	+?Array.prototype.unique //=php array_unique
+	+?Array.prototype.trim	 //remove empty elements
+
+	+?Object.prototype.keys 		 	//$.keys, =php array_keys
+	+?Object.prototype.values			//$.values, =php array_values
+	+?Object.prototype.serialize 	//$.serialize, obj/hash -> url str 
+	+?Object.prototype.clone 			//$.clone, copy an object
+	+?Object.prototype.extend 		//$.extend, override instance from another
+
+# modules
+
+	db											//WebSQL & localStorage
+	dataset									//JS data array toolkit, to search, sort ...
+	net 										//common WebSocket client
+	oauth  									//common OAuth client
+	ui.calendar 						//PC calendar
+	+ui.mobile.calendar 		//Mobile calendar
+	+ui.form 								//PC FormView for render/validate/submit ...
+	+ui.mobile.form 				//Mobile FormView for render/validate/submit ...
+	-date
+	-ie8
+	-layout.grids
+	-layout.overlay
+	-layout.override
+	-layout.tiles
+	-mapkies
+	-?safari 					
+	-ui.ext
+	-ui.froms
+	-ui.slider
+
+# $
+	
+	[Var]
+	
+	$.isArray	
+	$.isFunc
+	$.isBool
+	$.isElement
+	$.isNumber
+	-$.empty  			//-> isEmpty
+	+$.isEmpty
+
+	[Object]
+
+	-?$.keys					//=php array_keys
+	-?$.values				//=php array_keys
+	-?$.serialize 		//obj/hash -> url str 
+	-?$.clone 				//copy an object
+	-?$.extend 				//override instance from another
+	
+	[Array]
+	
+	-?$.unique
+	-?$.trim	
+	-?$.range		//get min, max value
+	-$.sort     //use official one
+
+	[String]
+	
+	$.unserialize 	//str -> obj => str.prototype
+
+	[System]
+
+	$.getArguments 	//js file arguments, e.g. <script src="liber.js?v=1234"/>, args={v:1234}
+	$.getCookie			//
+	$.preload 			//load js modules, images, css, fonts specified in $conf.
+	$.include 			//include another js file manually
+
+	[Tools]
+	$.log 					//log action to server 
+	$.rand 					//=php rand
+	$.keygen 				//generate a password or random key string
+	$.uuid  				//generate uuid (for smartphone)
+	-$.serializeForm //move to form view
+	-$.archivePath
+
+	[Event]
+	-?$.keyCode 			//get keycode, use e.keyCode||e.which instead?
+	-?$.fire 					//move to Element.prototype?
+
+# -?$ui : merge with $?
+	-?hide		//move to Element.prototype?
+	-?show 		//move to Element.prototype?
+	-?toggle 	//move to Element.prototype? OR remove
+	-?height  //move to Element.prototype?
+	-?width 	//move to Element.prototype?
+	-?remove  //move to Element.prototype?
+	-?insertBefore //move to Element.prototype?
+	-?insertAfter  //move to Element.prototype?
+	-?unselectable  //move to Element.prototype?
+
+	documentHeight
+	screenWidth
+	screenHeight 
+	-?rect 			//move to Element.prototype?
+	inRect 			//check if point in rect
+	cursor 			//get mouse position
+	-title 			//set document title
+	addLayer		//add a layer(<article>) for xxx_view
+	removeLayer //remove a layer(<article>)
+	showLastLayer //show the lastLayer, exec by sys.
+	bringLayerToFront //bring a view's layer to front.
+	-popup
+	-popupClose
+	-??uploadWindow
+
+# Element
+
+	+isSvg 			//check if this tag is SVG tag
+	addClass
+	removeClass
+	css
+	attr
+	bind
+	unbind 		//TODO
+	clone   	//get a clone of this Element, or append a clone to somewhere
+	height
+	width
+	hide
+	show
+	unselectable //disable mouse selection
+	animate
+	hover
+	+fire     //trigger an event
+
+# Render
+
+	-$select
+	-$slider
+	-$autocomplete //update this later
+	$sel      //common select->option/radio/checkbox function
+	$radio    
+	$checkbox
+	$rules    //add css declaration to DOM
+	-?? do we need <datalist> ? not work in safari
+
+# $app
+
+	[properties]
+
+	*views 				//array : all rendered views names
+	*view  				//str :current view name
+	-?*lastView 	//remove this?
+	-*layout 			//use overlay only
+	*__included 	//@TODO naming rules
+	*userId 			//@TODO naming rules
+	*start_view 	//1st view
+	
+	+?*__packages 		//move __packages here, all packages to preload
+	+?*args 					//move __args to here, js arguments
+	+?*__runtimeIdx 	//move __runtimeIdx here, runtime Element idx
+	+?*__layerIdx 		//move __layerIDX here, runtime layer index counter.
+	+?*__layers 			//move __layers here, runtime all layers. merge to $app.layers?
+	+?*__eventMatchers 				// move __eventMatchers here, supported eventtypes. move to $.fire?
+ 	+?*__eventDefaultOptions  // move __eventDefaultOptions here, default event options, move to $.fire or $?
+
+	[methods]
+
+	start 					//start an app
+	loaded 					//if there is $app.load you have to exec this manualy
+	preloaded     	//auto, after all contents preloaded
+	handle 					//handle messages from view, and decide what to do next, the core feature of $app.
+	trans						//view transition
+	loadView 				//load a view
+	drawView 				//draw a view after loaded
+	closeView 			//close a view.
+	
+	[delegates]
+	
+	onload  				//optional, if view need read its url arguments.
+	+onError  			//optional, to handle common errors for this $app
+	drawHeader 			//optional, draw common header
+	drawFooter 			//optional, draw common footer
+	-progressBar    //change to onLoadProgress
+	+onLoadProgress //optional, if there is preload contents, and your want to show progress, then implement this method
+
+# $controller
+
+	loaded  // if there is xxx_view.onload , you need to exec this inside onload after loading.
+	close   // close itself
+	redirect //redirect to other view
+	enhance	// extend xxx_view from $controller, NEVER DO this yourself.
+
+# -?$history  //merge with $app.views? to handle back button of browser.
+
+	*views  
+	push
+	init
+
+# $browser

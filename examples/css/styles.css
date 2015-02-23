@@ -1,0 +1,17 @@
+@charset "UTF-8";
+
+header{position:fixed;top:0;width:100vw;z-index:1;height:44px;}
+section{margin-top:64px;}
+footer{position:fixed;bottom:0;width:100vw;z-index:1;height:44px;}
+
+li{list-style:none;line-height:44px;height:44px;}
+li label{width:120px;text-align:left;display:inline-block;}
+li label:last-child{text-align:right;};
+
+.view{background-color:red;}
+.view.popup{background-color:yellow;}
+
+
+.top_view{background-color:blue;}
+
+.city_view{background-color:#00ff00 !important;color:white;}

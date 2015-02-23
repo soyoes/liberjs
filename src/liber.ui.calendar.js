@@ -28,56 +28,7 @@ var Calendar = function(attrs,onclick){
 
 	var _this = this;
 
-	this.daysOfMonth = function(y,m){return 32 - new Date(y, m, 32).getDate();};	
-
-	this.daysOfLastMonth = function(y,m){
-		var _1st_wday =  new Date(y,m,1).getDay();
-		if(_1st_wday==0)
-			return [];
-		var last_m = m==0?11:m-1,
-			last_y = m==0?y-1:y,
-			last_m_days = this.daysOfMonth(last_y, last_m),
-			res = [];
-		for(var i = last_m_days-_1st_wday+1; i<=last_m_days;i++)
-			res.push(i);
-		return res;
-	};
-
-	this.calDays = function(y,m){
-		var days = this.daysOfLastMonth(y,m);
-		var currentDays = this.daysOfMonth(y,m);
-		for(var i=1;i<=currentDays;i++){
-			days.push(i);
-		}
-		var lastwday = days.length%7;
-		if(lastwday>0){
-			for(var i=1;i<=7-lastwday;i++)
-				days.push(i);	
-		}
-		return days;
-	};
-
-	this.nextMonth = function(e){
-		var cal = $id("calendar"),
-			m = _this.month,
-			y = _this.year;
-		cal.innerHTML="";
-		_this.month = m==11?0:m+1;
-		_this.year = m==11?y+1:y;
-		_this.draw();
-		e.preventDefault();
-	};
-	this.prevMonth = function(e){
-		var cal = $id("calendar"),
-			m = _this.month,
-			y = _this.year;
-		cal.innerHTML="";
-		_this.month = m==0?11:m-1;
-		_this.year = m==0?y-1:y;
-		_this.draw();
-		e.preventDefault();
-	};
-
+	// this.daysOfMonth = function(y,m){return 32 - new Date(y, m, 32).getDate();};	
 
 	this.draw = function(){
 		var attrs = this.opts?this.opts:{};
@@ -91,33 +42,43 @@ var Calendar = function(attrs,onclick){
 		/* year - month row */
 
 		var monstrs = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
-			wdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
-			days = _this.calDays(_this.year, _this.month),
-			row = null,
-			thismon = false;
-		
-		$div([
-			$div([
-				$a({href:"#",html:"<",onclick:_this.prevMonth}),
-				$label({html:monstrs[_this.month]+", "+_this.year}),
-				$a({href:"#",html:">",onclick:_this.nextMonth}),
-			]).css("minWidth",'100px').attr({"class":"titleWrapper"}),
-		],frame).attr({"class":"title"});
+			// wdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+			wdays 	= ['日','月','火','水','木','金','土'],
+			//days = _this.calDays(_this.year, _this.month),
+			// row = null,
+			// thismon = false;
+			start 	= new Date(this.year,this.month-6,1),
+			end 	= new Date(this.year,this.month+18,1),
+			tic 	= start;
+
+		// $div([
+		// 	$div([
+		// 		// $a({href:"#",html:"<"}).bind("click",_this.prevMonth),
+		// 		$label({html:monstrs[_this.month]+", "+_this.year}),
+		// 		// $a({href:"#",html:">"}).bind("click",_this.nextMonth),
+		// 	]).css("minWidth",'100px').attr({"class":"titleWrapper"}),
+		// ],frame).attr({"class":"title"});
 		$ul((function(){
 			var lis = [];
 			for(var wd in wdays)
 				lis.push($li(wdays[wd]));
 			return lis;
 		})(),frame).attr({"class":"subtitle"});
-				
-		for(var d in days){
-			if(d%7==0) row = $ul({"class":"days"},frame);
-			var day = days[d];
-			if(!thismon && day==1) thismon = true;
-			else if(thismon && day==1) thismon = false;
-			var cls = !thismon?(d<7?"other lastmonth":"other nextmonth"):((d%7==0)?"sun":(d%7==6?"sat":""));
-			$li({html:day,"class":cls,"date":[_this.year,(_this.month+1)<10?"0"+(_this.month+1):_this.month+1,
-					day<10?"0"+day:day].join("-")},row).bind('click',_this.onclick);
+
+		var days = $ul({"class":"days"},frame);
+		while(tic<end){
+			var dt = tic.getDate();
+			if(dt==1){//draw month
+				var w = tic.getDay();
+				for (var i=0; i<8; i++) {$li({},days);};
+				$li({"class":"month",html:tic.getMonth()+1+"月"},days);
+			
+				for (var i=0; i<6; i++) {
+					$li({},days);
+				};
+			}
+			$li({"class":"day",html:dt+""},days);
+			tic = new Date(tic.getTime()+86400*1000);
 		}
 	};
 };
