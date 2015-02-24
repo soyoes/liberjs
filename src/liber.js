@@ -323,12 +323,12 @@ $.extend = function(destination, source) {
  * $.log("my_action"); => /log.php?action=my_view:$UID:my_action
  *  
  */
-$.log = function(action){
+$.log = function(action,params){
 	if(!$conf.log_path)return;
-	var uid=$app.userId || "0";
-	action=[$this.name, uid, action].join(":");
+	var p = $.serialize(params);
+	action=[$this.name, action].join("/");
 	if($http)
-		$http.get([log_path+"?action=",action].join(""));
+		$http.get([log_path,"/",action,"?",p].join(""));
 };
 $.rand = function(min, max) {
 	var argc = arguments.length;
@@ -419,10 +419,10 @@ $.uploadWindow = function(callback,multiple){
 		var ipt = $input(params,imgform);
 		/*evType = $browser.name=="MSIE"&&$browser.version<9 ? "focus":"change";*/
 		ipt.bind("change",callback);
-		$.fire(ipt,"click");
+		ipt.fire("click");
 	}else{
 		imgform.style.display = "block";
-		$.fire(iname,"click");
+		$id(iname).fire("click");
 		setTimeout(function(){
 			$id(fname,true).style.display = "none";
 		},100);
@@ -491,7 +491,7 @@ var $app = {
 		$("body > article.layer", function(a){a.parentNode.removeChild(a);})
 	},
 	preloaded : function(){
-		if($app.onload) $app.onload();
+		if($app.onLoad) $app.onLoad();
 		else $app.loaded();
 	},
 	loaded : function(){
@@ -576,6 +576,8 @@ var $app = {
 	drawView : function(view){
 		if(!view) return; //FIXME
 		if(view.reusable && view.layer){//FIXME
+			if(view.layer && !view.layer.parentNode)
+				document.body.appendChild(view.layer);
 			$app.bringViewToFront(view);
 			if(view.onActive) {
 				view.onActive.call(view,$app.last_view? window[$app.last_view]:null);
@@ -647,6 +649,11 @@ var $controller = {
 		// console.log("controller::close");
 		$app.handle("close",$this);
 	},
+	reload : function(params){
+		this.params = params || this.params;
+		if(this.onLoad)this.onLoad.call(this,this.params);
+		else this.loaded();
+	},
 	drawView : function(idx){
 		// console.log("controller::drawView");
 		var view = this;
@@ -681,27 +688,6 @@ var $controller = {
 	},
 };
 
-// var $history = {
-// 	views:[],
-// 	push : function(url){
-// 		$history.views.push(url.split("?")[0]);
-// 		$.fire($a({href:"#"+url, html:"_"}), "click");
-// 	},
-// 	init: function(){
-// 		window.onhashchange = function () {
-// 			var hash = window.location.hash.replace(/^#/,"");
-// 			if(hash.match(/^~/)){
-// 				var func = hash.replace(/^~/,"");
-// 				try{
-// 					eval(func+"()");
-// 				}catch(ex){}
-// 			}else{
-// 				$app.openView(hash,false);
-// 			}
-// 		};
-// 	}
-// };
-// $history.init();
 
 String.prototype.ucfirst = function(){
 	return this.charAt(0).toUpperCase()+this.substring(1);

@@ -68,6 +68,7 @@ var top_view = {
 			</artile>
 		*/
 	drawContent : function(wrapper, layer){
+
 		var datas = [
 			{name:"Tokyo",country:"Japan"},
 			{name:"London",country:"England"},
@@ -82,16 +83,7 @@ var top_view = {
 				$label({html:d.country,url:url}),
 			],list);
 		}
-		var f = function(e){
-			console.log("exec",e);
-		};
-
-		var ff = f.toString();
-		console.log(ff);
-		var vv = 1;
-		eval("("+ff+")(vv)");
-
-		console.log(JSON.stringify({"v":ff}));
+		console.log("top drawContent");
 	},
 
 	/**
@@ -127,7 +119,9 @@ var city_view = {
 	},
 	drawContent : function(wrapper, layer){
 		console.log(this.params);
-		$h1("City : "+this.city,wrapper);
+		$h1("City : "+this.city,wrapper).bind('click',function(e){
+			$this.reload({n:"no value",c:"no value"});
+		});
 		$h1("Country : "+this.country,wrapper);
 	}
 };
