@@ -83,7 +83,15 @@ var top_view = {
 				$label({html:d.country,url:url}),
 			],list);
 		}
-		console.log("top drawContent");
+
+		var out = $div({id:"outer"},wrapper).css({width:"150px",height:"100px",background:"#f00",margin:"auto"});
+		var inner = $div({id:"inner"},out).css({width:"50px",height:"50px",background:"#00f",margin:"auto"});
+		out.hover(function(e){
+			this.css("background","#ff0");
+		},function(e){
+			this.css("background","#f00");
+		});
+
 	},
 
 	/**

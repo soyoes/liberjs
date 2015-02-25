@@ -282,40 +282,6 @@ $.extend = function(destination, source) {
     return destination;
 }
 
-// $.fire = function(el, eventName){
-// 	el = typeof(el)=="string" ? $id(el):el;
-// 	if(el == undefined)
-// 		return;
-//     var opt = $.extend($.__eventOpts, arguments[2] || {});
-//     	oe=null, etype = null;
-//     for (var name in $.__events){
-//         if ($.__events[name].test(eventName)) { etype = name; break; }
-//     }
-//     if (!etype){
-//     	if($app.onError)$app.onError("event_fire_error",{name:eventName});
-//     	throw new SyntaxError('Only HTMLEvents and MouseEvents interfaces are supported');
-//     }
-//     if(el[eventName]){
-//     	el[eventName]();
-//     }else if (document.createEvent){
-//         oe = document.createEvent(etype);
-//         if (etype == 'HTMLEvents'){
-//             oe.initEvent(eventName, opt.bubbles, opt.cancelable);
-//         }else{
-//             oe.initMouseEvent(eventName, opt.bubbles, opt.cancelable, document.defaultView,
-//             		opt.button, opt.pointerX, opt.pointerY, opt.pointerX, opt.pointerY,
-//             		opt.ctrlKey, opt.altKey, opt.shiftKey, opt.metaKey, opt.button, el);
-//         }
-//         el.dispatchEvent(oe);
-//     }else{
-//         opt.clientX = opt.pointerX;
-//         opt.clientY = opt.pointerY;
-//         var evt = document.createEventObject();
-//         oe = $.extend(evt, opt);
-//         el.fireEvent('on' + eventName, oe);
-//     }
-//     return el;
-// }
 /**
  * send log to dummy url log.html. for apache log analyzing.
  * 
@@ -1158,7 +1124,7 @@ var __element = {
 			this.bind({mouseover:function(e){
 				e = e||window.event;var t=e.target||e.srcElement;
 				var f = eval(t.attr("__over"));
-				if(f && "no"===t.attr("__exec")){t.attr("__exec","yes");f(e,t);}
+				if(f && "no"===t.attr("__exec")){t.attr("__exec","yes");f.call(t,e);}
 				else return e.preventDefault()&&false;
 			}});
 		}
@@ -1172,7 +1138,7 @@ var __element = {
 					return e.preventDefault()&&false;	
 				}else{
 					var out = eval(t.attr("__out"));
-					if(out){t.attr({"__exec":"no"});out(e,t);}
+					if(out){t.attr({"__exec":"no"});out.call(t,e);}
 				}
 			}});
 		}

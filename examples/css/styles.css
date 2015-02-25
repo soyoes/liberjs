@@ -9,9 +9,9 @@ li label{width:120px;text-align:left;display:inline-block;}
 li label:last-child{text-align:right;};
 
 .view{background-color:red;}
-.view.popup{background-color:yellow;}
+.view.popup{background-color:#fff;}
 
 
-.top_view{background-color:blue;}
+.top_view{background-color:#fff;}
 
-.city_view{background-color:#00ff00 !important;color:white;}
+.city_view{background-color:#fff !important;}
