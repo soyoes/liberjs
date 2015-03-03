@@ -87,18 +87,14 @@ $.isFunc = function(f) {
 $.isBool = function(va){
 	return va===true || va===false;
 }
-$.isElement = function(obj) {
-	try {
-    	return obj instanceof HTMLElement || obj instanceof SVGElement;
-	}catch(e){
-		return (typeof obj==="object") &&
-			(obj.nodeType===1) && (typeof obj.style === "object") &&
-			(typeof obj.ownerDocument ==="object");
-  	}
+$.isElement = function(o) {
+    	return o instanceof HTMLElement || o instanceof SVGElement;
 }
 $.isNumber = function(n){return !isNaN(parseFloat(n)) && isFinite(n);}
 $.isString = function(o){return typeof o == 'string' || o instanceof String;}
-$.isObject = function(o){return typeof o === "object";}
+$.isObject = function(o){return "[object Object]"===Object.prototype.toString.call(o);}
+$.isNodeList = function(o){return o instanceof NodeList;}//return "[object NodeList]"===Object.prototype.toString.call(o);
+
 $.keys=function(obj){
 	var s = [];if($.isObject(obj))for(var k in obj){s.push(k);}return s;
 };
@@ -212,10 +208,14 @@ $.keyCode = function(e){
 }
 
 $.clone = function(o){
-	if(typeof(o)==="object")
+	if($.isObject(o))
 		return JSON.parse(JSON.stringify(o));
 	else if($.isArray(o))
 		return o.slice(0);
+	else if($.isNodeList(o)){
+		var n=[]; for(var i=0;i<o.length;i++)n.push(o[i]);return n;
+	}
+
 	return o;
 }
 $.include = function(src, callback,params){
@@ -574,7 +574,7 @@ var $app = {
 				}
 			}
 			lv = lv || window[$app.start_view];
-			lv.layer.show();
+			if(lv.layer) lv.layer.show();
 		}
 
 		$this =($app.views.length>=1)? window[$app.views.pop()]:window[$app.start_view];
@@ -599,7 +599,7 @@ var $app = {
 		// console.log("app::hideOthers",view.name);
 		for(var i=0;i<$app.views.length;i++){
 			var v = window[$app.views[i]];
-			if($app.views[i]!=view.name)
+			if($app.views[i]!=view.name && v.layer)
 				//console.log("hide:",v.layer);
 				v.layer.hide();
 		}
@@ -1480,7 +1480,7 @@ var $http = {
   				if(xhr.status==200){
   					if(xhr.runtimeParams.callback){
 	  					var res = xhr.responseText;
-	  					if (xhr.runtimeParams.format == 'json') {
+	  					if (xhr.runtimeParams.format === 'json') {
 	  						try{
 	  							res = JSON.parse(res);
 	  						}catch(ex){
@@ -1493,7 +1493,8 @@ var $http = {
   				}else{
   					var errors = {
 	    				code : xhr.status,
-	    				message : xhr.getResponseHeader("ERROR_MESSAGE")
+	    				message : xhr.getResponseHeader("ERROR_MESSAGE"),
+	    				data : xhr.responseText
 	    			};
   					if(xhr.runtimeParams.callback)
   						xhr.runtimeParams.callback(null, errors);	
