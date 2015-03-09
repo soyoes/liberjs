@@ -8,6 +8,7 @@
 
 
 $conf=$conf||{};
+$ui={};
 /**
  * @return {
  * 	name:
@@ -51,7 +52,8 @@ $ = function(query,each){
 }
 
 $.args=null,
-$.__runtimeIdx=0,
+$.__rfuncs = {};//runtime funcs
+$.__rid=0,//runtimeIdx
 $.__events = {
 	'HTMLEvents': /^(?:load|unload|abort|error|select|change|submit|reset|focus|blur|resize|scroll)$/,
 	'MouseEvents': /^(?:click|dblclick|touch(start|end|up|cancel)|mouse(?:down|up|over|move|out))$/
@@ -87,14 +89,18 @@ $.isFunc = function(f) {
 $.isBool = function(va){
 	return va===true || va===false;
 }
-$.isElement = function(o) {
-    	return o instanceof HTMLElement || o instanceof SVGElement;
+$.isElement = function(obj) {
+	try {
+    	return obj instanceof HTMLElement || obj instanceof SVGElement;
+	}catch(e){
+		return (typeof obj==="object") &&
+			(obj.nodeType===1) && (typeof obj.style === "object") &&
+			(typeof obj.ownerDocument ==="object");
+  	}
 }
 $.isNumber = function(n){return !isNaN(parseFloat(n)) && isFinite(n);}
 $.isString = function(o){return typeof o == 'string' || o instanceof String;}
-$.isObject = function(o){return "[object Object]"===Object.prototype.toString.call(o);}
-$.isNodeList = function(o){return o instanceof NodeList;}//return "[object NodeList]"===Object.prototype.toString.call(o);
-
+$.isObject = function(o){return typeof o === "object";}
 $.keys=function(obj){
 	var s = [];if($.isObject(obj))for(var k in obj){s.push(k);}return s;
 };
@@ -208,14 +214,10 @@ $.keyCode = function(e){
 }
 
 $.clone = function(o){
-	if($.isObject(o))
+	if(typeof(o)==="object")
 		return JSON.parse(JSON.stringify(o));
 	else if($.isArray(o))
 		return o.slice(0);
-	else if($.isNodeList(o)){
-		var n=[]; for(var i=0;i<o.length;i++)n.push(o[i]);return n;
-	}
-
 	return o;
 }
 $.include = function(src, callback,params){
@@ -349,6 +351,19 @@ $.screenWidth = function(){
 $.screenHeight = function(){
     return  window.innerHeight|| document.documentElement.clientHeight|| document.getElementsByTagName('body')[0].clientHeight;
 }
+$.rect = function(el){
+	return el&&el.rect?el.rect():{left:0,top:0,width:0,height:0};
+}
+$.remvoe = function(el){
+	if(el&&el.remove)el.remove();
+}
+$.show = function(el){
+	if(el&&el.remove)el.show(); return el;
+}
+$.hide = function(el){
+	if(el&&el.remove)el.hide(); return el;
+}
+
 	
 	
 /**
@@ -394,6 +409,14 @@ $.uploadWindow = function(callback,multiple){
 		},100);
 	}
 }
+
+/* for bind */
+// $.registerFunc = function(idx, type, f){
+
+// }
+// $.removeFunc = function(idx, type, f){
+	
+// }
 
 
 var $app = {
@@ -480,15 +503,13 @@ var $app = {
 		}
 	},
 	trans : function(e){
-		e = e||window.event;
-		var target = e.target||e.srcElement;
-		var url = target.getAttribute("url");
+		var url = this.getAttribute("url");
 		if(url && $.isString(url)){
 			// console.log(url, target.tagName);
 			if(url.match(/@\?*/g)) //is popup
 				$app.openView(url.replace('@?','?'), true);
 			else {
-				if(target.tagName!="A")
+				if(this.tagName!="A")
 					$a({href:"#"+url, html:"_"},document.body).css({opacity:0}).fire("click");
 					// .onload = function(e){
 					// 	e = e||window.event;var t=e.target||e.srcElement;
@@ -496,7 +517,7 @@ var $app = {
 					// 	t.fire("click");
 					// };
 				else
-					target.fire("click");	
+					this.fire("click");	
 			}
 		}
 	},
@@ -574,7 +595,7 @@ var $app = {
 				}
 			}
 			lv = lv || window[$app.start_view];
-			if(lv.layer) lv.layer.show();
+			lv.layer.show();
 		}
 
 		$this =($app.views.length>=1)? window[$app.views.pop()]:window[$app.start_view];
@@ -803,7 +824,7 @@ var $deltas = {
 };	
 
 var __element = {
-		
+
 	isSvg : function(){
 		window.__svgTagIndex = window.__svgTagIndex||__tags.indexOf('svg');
 		return __tags.indexOf(this.tagName.toLowerCase())>=window.__svgTagIndex;
@@ -906,25 +927,27 @@ var __element = {
 
 	handle : function(e){
 		e = e||window.event;
-		var t = this || e.target||e.srcElement,
-			type = e.type,
-			handlers = t.attr("__on"+type);
+		var type = e.type,
+			idx = this.attr('__idx__')+"",
+			handlers;
 		if($browser.device=="smartphone"){
+			//handlers = $.__rfuncs[idx]?$.__rfuncs[idx][type]||[];
 			switch(type){
 				case "touchstart":
 					this.attr("__touchSX",e.changedTouches[0].pageX);
         			this.attr("__touchSY",e.changedTouches[0].pageY);
         			break;
 				case "touchend":
-					var th = JSON.parse(t.attr("__ontap")),
+					var th = $.__rfuncs[idx]?$.__rfuncs[idx][type]:[],
 						x = e.changedTouches[0].pageX,
 						y = e.changedTouches[0].pageY,
 						ox = parseFloat(this.attr("__touchSX")),
 						oy = parseFloat(this.attr("__touchSY"));
 					if(th && th.length>0 && Math.abs(ox-x) + Math.abs(oy-y)<=10){
 						for(var i=th.length-1;i>=0;i--){
-							var o = eval("("+th[i]+")");
-							if(o) o.call(t, e);
+							//var o = eval("("+th[i]+")");
+							var o = th[i];
+							if($.isFunc(o)) o.call(this, e);
 						}
 					};
 					this.removeAttribute("__touchSX");
@@ -932,13 +955,17 @@ var __element = {
 					break;
 				default:break;
 			}
-		}
-		if(handlers){
-			handlers = JSON.parse(handlers);
-			for(var i=handlers.length-1;i>=0;i--){
-				var o = eval("("+handlers[i]+")");
-				if(o) o.call(t, e);
-			}
+		}else{
+			var handlers = $.__rfuncs[idx]?$.__rfuncs[idx][type]:null;
+			//console.log(handlers);
+			if(handlers){
+				//handlers = JSON.parse(handlers);
+				for(var i=handlers.length-1;i>=0;i--){
+					//var o = eval("("+handlers[i]+")");
+					var o = handlers[i];
+					if($.isFunc(o)) o.call(this, e);
+				}
+			}	
 		}
 	},
 
@@ -949,16 +976,12 @@ var __element = {
 			//if(arg1=="click"&&$browser.device=="smartphone")arg1=this.getAttribute("touch")||"touchstart";		
 			if(arg2){
 				arg1 = arg1.replace(/^on/,'');
-				var curr = this.attr("__on"+arg1);
-				//if(curr) this.removeEventListener(arg1,curr);
-				var code = arg2.toString();
-				if(!curr) curr = [code];
-				else {
-					curr = JSON.parse(curr);
-					curr.push(code);
-				}
-				this.attr("__on"+arg1, JSON.stringify(curr));
-
+				var i = this.getAttribute("__idx__")+"";
+				if(!$.__rfuncs[i])
+					$.__rfuncs[i] = [];
+				var curr = $.__rfuncs[i][arg1]||[];
+				curr.push(arg2);
+				$.__rfuncs[i][arg1] = curr;
 				var es = ((arg1=="tap"||arg1=="touch")&&$browser.device=="smartphone")?["touchstart","touchend"]:[arg1];
 				for(var i=0;i<es.length;i++){
 					this.addEventListener(es[i],this.handle,false); //NO IE8 support any longer	
@@ -966,7 +989,6 @@ var __element = {
 			}
 		}else if(typeof(arg1)=="object" && !arg2){
 			for(var f in arg1){
-				f = f.replace(/^on/,'');
 				this.bind(f,arg1[f]);
 			}
 		}
@@ -975,7 +997,9 @@ var __element = {
 
 	unbind : function(evname){
 		// this.attr("__on"+evname,false);
-		this.removeAttribute("__on"+evname);
+		//this.removeAttribute("__on"+evname);
+		var i = this.getAttribute('__idx__');
+		if($.__rfuncs[i]) delete $.__rfuncs[i];
 		return this;
 	},
 
@@ -1187,6 +1211,7 @@ $.extend(Element.prototype,__element);
 var $e = function(type, args, target, namespace){
 	type = namespace? type.replace(/_/g, "-"):type;
 	var _el = namespace? document.createElementNS(namespace,type):document.createElement(type);
+	_el.setAttribute("__idx__",$.__rid++);
 	if(target && typeof(target)=="string")
 		target = $id(target);
 	if(args){
@@ -1201,15 +1226,16 @@ var $e = function(type, args, target, namespace){
 					break;
 			}
 		}else if($.isArray(args)){
-			for(var i in args){
-				if(args[i]!=null){
-					if($.isElement(args[i])){
-						_el.appendChild(args[i]);
-					}else if($.isFunc(args[i])){
+			for(var i=0;i<args.length;i++){
+				var o = args[i];
+				if(o!=null){
+					if($.isElement(o)){
+						_el.appendChild(o);
+					}else if($.isFunc(o)){
 						var thisEl = _el;
-						var res = args[i]();
+						var res = o();
 						if($.isArray(res)){
-							for(var _i in res){
+							for(var _i=0;_i<res.length;_i++){
 								if($.isElement(res[_i]))
 									thisEl.appendChild(res[_i]);
 							}
@@ -1239,6 +1265,7 @@ var $e = function(type, args, target, namespace){
 	}
 	if(target&&typeof(target)!="function")
 		target.appendChild(_el);
+	
 	return _el;
 };
 
@@ -1432,7 +1459,7 @@ var $select = function(values,attrs,target){
  * */
 var $styles=function(rules,target,id){
 	target = target||document.body;
-	var sid = id?id: "runtime_rule_"+(++$.__runtimeIdx),
+	var sid = id?id: "runtime_rule_"+(++$.__rid),
 		cs = $e('style',{type:"text/css",id:sid},target);
 	var tn = document.createTextNode("");
 	if(typeof(rules)=="string"){
@@ -1454,16 +1481,37 @@ var $http = {
 		:new ActiveXObject("Microsoft.XMLHTTP"); /*ie5-6*/
 	},
 	
-	ajax : function(method, url, params, callback, format, onprogress){
-		url = $conf.http_host && url.indexOf("http")!=0 ? $conf.http_host+url : url;
-		var xhr = $http.getRequest();
-		if(!format) format = "json";
-		xhr.runtimeParams = {
+	/**
+	 * 
+	 * @param  Object opts
+	 *     .url
+	 *     .method
+	 *     .params
+	 *     .callback
+	 *     .format
+	 *     .onprogress
+	 * 
+	 */
+	ajax : function(opts){
+		//ajax : function(method, url, params, callback, format, onprogress){
+		if(!opts || !opts.url) throw "ERR: $http.ajax wrong params ";
+
+		var url = $conf.http_host && opts.url.indexOf("http")!=0 ? $conf.http_host+opts.url : opts.url,
+			xhr = $http.getRequest(),
+			params = opts.params||{},
+		 	format = opts.format||"json",
+		 	method = opts.method||"GET",
+		 	callback = opts.callback||null;
+
+		xhr.runtime = {
 			callback : callback,
-			format : format
-		}; 
-		if(onprogress)
-			xhr.runtimeParams.onprogress = onprogress;
+			format : format,
+			url : url,
+			method : method,
+			params : params
+		};
+		if(opts.onprogress)
+			xhr.runtime.onprogress = opts.onprogress;
 
 		var isFile = false;
 		if(method == "UPLOAD"){
@@ -1471,33 +1519,34 @@ var $http = {
 			isFile = true;
 			xhr.upload.addEventListener("progress", function(e) {
 				var pc = parseInt(100 - (e.loaded / e.total * 100));
-				if(xhr.runtimeParams.onprogress)
-					xhr.runtimeParams.onprogress(pc);
+				if(xhr.runtime.onprogress)
+					xhr.runtime.onprogress(pc);
 			}, false);
 		}
 		xhr.onreadystatechange=function(){
   			if (xhr.readyState==4 ){
   				if(xhr.status==200){
-  					if(xhr.runtimeParams.callback){
+  					if(xhr.runtime.callback){
 	  					var res = xhr.responseText;
-	  					if (xhr.runtimeParams.format === 'json') {
+	  					if (xhr.runtime.format === 'json') {
 	  						try{
 	  							res = JSON.parse(res);
 	  						}catch(ex){
-	  							if($app.onError)$app.onError("http_parse_error",{data:res});
-	  							return xhr.runtimeParams.callback(null,{message:"json_error", data:res});
+	  							var err = $.extend({code:200,type:"json_error"},xhr.runtime);
+	  							if($app.onError)$app.onError("http_parse_error",err);
+	  							return xhr.runtime.callback(null,err);
 	  						}
 	  					}
-	    				xhr.runtimeParams.callback(res);
+	    				xhr.runtime.callback(res);
     				}	
   				}else{
-  					var errors = {
+  					var errors = $.extend({
 	    				code : xhr.status,
 	    				message : xhr.getResponseHeader("ERROR_MESSAGE"),
 	    				data : xhr.responseText
-	    			};
-  					if(xhr.runtimeParams.callback)
-  						xhr.runtimeParams.callback(null, errors);	
+	    			},xhr.runtime);
+  					if(xhr.runtime.callback)
+  						xhr.runtime.callback(null, errors);	
   					if($app.onError)$app.onError("http_server_error",errors);	
 	  			}
     		}
@@ -1519,6 +1568,7 @@ var $http = {
   		}
   		method =method.toUpperCase();  
   		xhr.open(method,url,true);
+  		// console.log(url,method);
   		if(method == 'POST' || method == 'PUT' || method == 'DELETE'){
   			xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
   			xhr.send(userdata);
@@ -1527,20 +1577,20 @@ var $http = {
 	},
 	
 	get : function(url, params, callback, format){
-		$http.ajax('GET',url,params,callback,format);
+		$http.ajax({url:url, method:"GET", params:params, callback:callback, format:format});
 	},
 	
 	post : function(url, params, callback, format){
-		$http.ajax('POST',url,params,callback,format);
+		$http.ajax({url:url, method:"POST", params:params, callback:callback, format:format});
 	},
 	put : function(url, params, callback, format){
-		$http.ajax('PUT',url,params,callback,format);
+		$http.ajax({url:url, method:"PUT", params:params, callback:callback, format:format});
 	},
 	del : function(url, params, callback, format){
-		$http.ajax('DELETE',url,params,callback,format);
+		$http.ajax({url:url, method:"DELETE", params:params, callback:callback, format:format});
 	},
 	upload : function(url, params, callback, format, onprogress){
-		$http.ajax('UPLOAD',url,params,callback,format,onprogress);
+		$http.ajax({url:url, method:"UPLOAD", params:params, callback:callback, format:format, onprogress:onprogress});
 	}
 };
 
