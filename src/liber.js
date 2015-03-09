@@ -480,6 +480,7 @@ var $app = {
 		$("body > article.layer", function(a){a.parentNode.removeChild(a);})
 	},
 	preloaded : function(){
+		if($app.onload)$app.onLoad=$app.onload;
 		if($app.onLoad) $app.onLoad();
 		else $app.loaded();
 	},
@@ -550,6 +551,7 @@ var $app = {
 				$app.views.push(vname);	
 				if(opener && opener.onInactive) 
 					opener.onInactive.call(opener,view);
+				if(view.onload)view.onLoad = view.onload;
 				if(view.onLoad)
 					view.onLoad.call(view,params);
 				else
@@ -928,8 +930,7 @@ var __element = {
 	handle : function(e){
 		e = e||window.event;
 		var type = e.type,
-			idx = this.attr('__idx__')+"",
-			handlers;
+			idx = this.attr('__idx__')+"";
 		if($browser.device=="smartphone"){
 			//handlers = $.__rfuncs[idx]?$.__rfuncs[idx][type]||[];
 			switch(type){
@@ -947,7 +948,7 @@ var __element = {
 						for(var i=th.length-1;i>=0;i--){
 							//var o = eval("("+th[i]+")");
 							var o = th[i];
-							if($.isFunc(o)) o.call(this, e);
+							if($.isFunc(o.func)) o.func.apply(this, [e].concat(o.args));
 						}
 					};
 					this.removeAttribute("__touchSX");
@@ -963,7 +964,7 @@ var __element = {
 				for(var i=handlers.length-1;i>=0;i--){
 					//var o = eval("("+handlers[i]+")");
 					var o = handlers[i];
-					if($.isFunc(o)) o.call(this, e);
+					if($.isFunc(o.func)) o.func.apply(this, [e].concat(o.args));
 				}
 			}	
 		}
@@ -980,7 +981,11 @@ var __element = {
 				if(!$.__rfuncs[i])
 					$.__rfuncs[i] = [];
 				var curr = $.__rfuncs[i][arg1]||[];
-				curr.push(arg2);
+				var fo = {
+					func : arg2,
+					args : Array.prototype.slice.call(arguments).slice(2)
+				};
+				curr.push(fo);
 				$.__rfuncs[i][arg1] = curr;
 				var es = ((arg1=="tap"||arg1=="touch")&&$browser.device=="smartphone")?["touchstart","touchend"]:[arg1];
 				for(var i=0;i<es.length;i++){
