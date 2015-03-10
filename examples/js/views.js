@@ -77,8 +77,8 @@ var top_view = {
 		var list = $ol({id:"examples"},wrapper);
 		for(var i=0,d;d=examples[i++];){
 			$li([
-				$label({html:d.name,url:d.view+"@"}),
-			],list);
+				$label(d.name),
+			],list).attr({url:d.view+"@"});
 		}
 	},
 
