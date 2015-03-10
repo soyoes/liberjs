@@ -4,14 +4,64 @@ header{position:fixed;top:0;width:100vw;z-index:1;height:44px;}
 section{margin-top:64px;}
 footer{position:fixed;bottom:0;width:100vw;z-index:1;height:44px;}
 
-li{list-style:none;line-height:44px;height:44px;}
-li label{width:120px;text-align:left;display:inline-block;}
-li label:last-child{text-align:right;};
+ul li{list-style:none;line-height:44px;height:44px;}
+ul li label{width:120px;text-align:left;display:inline-block;}
+ul li label:last-child{text-align:right;};
 
 .view{background-color:red;}
 .view.popup{background-color:#fff;}
 
 
 .top_view{background-color:#fff;}
+.top_view ol{width:500px;margin:auto;}
+.top_view ol li{width:100%;height:44px;line-height:44px;text-align:left;background-color:#F3F7F8;padding-left:10px;cursor:pointer;}
 
-.city_view{background-color:#fff !important;}
+form {}
+form *{position:relative;}
+form ul{width:600px;margin:auto;position:relative;display:table;}
+form li{width:100%;height:44px;line-height:44px;display:table-row;position:relative;}
+form li>*{display:table-cell;height:100%;line-height:44px;position:relative;}
+form h4{margin:0;clear:none;width:120px;text-align:right;padding:0;padding-right:20px;background-color:transparent;vertical-align:top;}
+form li > div{width:340px;}
+form input[type="text"],form input[type="password"]{height:36px;outline:none;line-height:36px;width:300px;background-color:#EEF1F3;margin:0;border:0;padding-left:10px;}
+form select{height:36px;outline:none;}
+form textarea{outline:none;background-color:#EEF1F3;width:300px;min-height:80px;margin-top:10px;}
+form i{color:red;width:100px;line-height:20px;text-align:left;}
+form .error {}
+form .error input[type="text"],
+form .error input[type="password"],
+form .error textarea{border:1px solid red;}
+form .error select{}
+form .error[type="checkbox"] div,
+form .error[type="radio"] div{outline:1px dashed red;}
+
+form li[type="custom_radio"] label {width:120px;height:36px;position:relative;display:inline-block;padding:0 !important;overflow:hidden;
+		margin-left:10px;margin-right:10px;border-radius:18px;border:1px solid #CCC;}
+form li[type="custom_radio"] label input{display:block;position:absolute;z-index:0;opacity:0;margin:0;}
+form li[type="custom_radio"] label .button{position:absolute;width:240px;height:100%;z-index:1;margin:0;padding:0;}
+form li[type="custom_radio"] label span{line-height:36px;height:36px;margin:0;padding:0;width:50%;display:block;float:left;background-color:gray;text-align:right;padding-right:20px;box-sizing:border-box;}
+form li[type="custom_radio"] label span.on{width:50%;display:inline-block;background-color:green;text-align:left;padding-left:20px;color:white;}
+form li[type="custom_radio"] label .knob{position:absolute;width:20px;height:20px;background-color:white;border-radius:10px;
+		z-index:2;top:8px;left:8px;}	
+form li[type="custom_radio"] input:checked + .button { transform: translateX(-120px); -webkit-transform: translateX(-120px); }
+
+form li[type="custom_radio"] input:checked + .button + .knob{transform: translateX(84px); -webkit-transform: translateX(86px);}
+
+
+/*
+form *:before{position:absolute;top:0;left:0;background-color: black;color:white;width:20px;height:12px;font-size:7pt;z-index:99;line-height:12px;text-align:left;}
+form li:before{content:"LI";left:0;top:0;}
+form li.error:before{content:"LI.error";width:45px;}
+form li:nth-child(2n):before{content:"LI";left:0;top:44px;}
+form li:nth-child(3n):before{content:"LI";left:0;top:88px;}
+form li:nth-child(4n):before{content:"LI";left:0;top:132px;}
+form li:nth-child(5n):before{content:"LI";left:0;top:176px;}
+form div:before{content:"DIV";background-color:#03F}
+form h4:before{content:"H4";left:25px;background-color:#F03;}
+form i:before{content:"i";left:0;background-color:#CC0;color:black;text-align:center;width:18px;font-size:9pt;}
+form label:before{content:"LABEL";left:auto;right:0;width:30px;font-size:7pt;background-color:#090}
+form input:before{content:"INPUT";width:30px;left:2px;top:-2px;background-color:#90C;}
+
+form label{border:1px solid #090;}
+
+*/

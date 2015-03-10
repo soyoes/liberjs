@@ -16,6 +16,11 @@ $app.drawFooter = function(footer){
 	$span("copyright liberjs.org", footer);
 };
 
+$app.onError = function(er,d){
+	console.log("ERR",er,d);
+}
+
+
 
 /*---------------------------
  views 
@@ -45,6 +50,7 @@ var top_view = {
 		this.loaded();
 	},
 
+
 	/**
 		drawHeader : [Optional], delegate method
 		To customize the header of a certain view.
@@ -68,30 +74,12 @@ var top_view = {
 			</artile>
 		*/
 	drawContent : function(wrapper, layer){
-
-		var datas = [
-			{name:"Tokyo",country:"Japan"},
-			{name:"London",country:"England"},
-			{name:"New York",country:"USA"},
-			{name:"Paris",country:"France"},
-		];
-		var list = $ul({id:"cities"},wrapper);
-		for(var i=0,d;d=datas[i++];){
-			var url = "city_view@?n="+d.name+"&c="+d.country;
+		var list = $ol({id:"examples"},wrapper);
+		for(var i=0,d;d=examples[i++];){
 			$li([
-				$label({html:d.name,url:url}),
-				$label({html:d.country,url:url}),
+				$label({html:d.name,url:d.view+"@"}),
 			],list);
 		}
-
-		var out = $div({id:"outer"},wrapper).css({width:"150px",height:"100px",background:"#f00",margin:"auto"});
-		var inner = $div({id:"inner"},out).css({width:"50px",height:"50px",background:"#00f",margin:"auto"});
-		out.hover(function(e){
-			this.css("background","#ff0");
-		},function(e){
-			this.css("background","#f00");
-		});
-
 	},
 
 	/**
@@ -102,34 +90,85 @@ var top_view = {
 		*/
 	drawFooter : function(footer){
 		$app.drawFooter(footer);
-		var outer = $div("12345",footer).bind('click',function(e){
-			console.log(this.tagName,e.target.tagName);
-		});
-		$label("9999",outer);
 	},
-	onActive: function(popup){
-		console.log("onActive",popup.name);
+	onActive: function(popup,data){
+		console.log("onActive",popup.name,data,$this.name);
 	},
-	onInactive: function(popup){
-		console.log("onInactive",popup.name);
+	onInactive: function(popup,data){
+		console.log("onInactive",popup.name,data,$this.name);
 	},
 };
 
-var city_view = {
-	name : "city_view",
-	onLoad : function(params){
-		this.city = params.n;
-		this.country = params.c;
-		this.loaded();
+var form_view = {
+
+	name : "form_view",
+
+	extend : "$form_view",
+
+	formURL		:".",
+	formMethod	:"POST",
+	formData 	:null,
+	formItems	:[
+		{
+			name 	: "email",
+			type 	: 'text',
+			title 	: "Email:",
+			validate: 'email',
+		},
+		{
+			name 	: "name",
+			type 	: 'text',
+			title 	: "Name:",
+			validate: 'len:5',
+		},
+		{
+			name 	: "pass",
+			type 	: 'password',
+			title 	: "Password:",
+			validate: 'len:5',
+		},
+		{
+			name 	: "gender",
+			type 	: 'radio',
+			title 	: "Gender:",
+			options : [{label:"Male",value:1},{label:"Female",value:2}],
+			validate: 'len:1',
+		},
+		{
+			name 	: "favorite",
+			type 	: 'checkbox',
+			title 	: "Favorite:",
+			options : [{label:"Apple",value:1},{label:"Pinapple",value:2},{label:"Banana",value:3},{label:"Kiwi",value:4}],
+			validate: 'len:1:2',
+		},
+		{
+			name 	: "country",
+			type 	: 'custom_radio',
+			title 	: "Country:",
+			options : [{label:"Japan",value:1},{label:"China",value:2},{label:"France",value:3},{label:"America",value:4}],
+		},
+		{
+			name 	: "desc", 
+			type 	: 'textarea',
+			title 	: "Description:",
+		}
+	],
+	
+	drawHeader : function(h){
+		
+		$h1("FormView example",h);
 	},
-	drawHeader : function(header){
-		$label({html:"back"},header).bind('click', this.close);
-	},
+
 	drawContent : function(wrapper, layer){
-		console.log(this.params);
-		$h1("City : "+this.city,wrapper).bind('click',function(e){
-			$this.reload({n:"no value",c:"no value"});
-		});
-		$h1("Country : "+this.country,wrapper);
+		console.log("drawContent");
+		$this.drawForm(wrapper);
+	},
+
+	drawFooter : function(f){
+		$a({href:"./examples.html",html:"back"},$div({},f));
+		$button("保存", f).bind("click", $this.formSubmit);
+		$button("クリア", f).bind("click", $this.formReset);
+
 	}
-};
+}
+

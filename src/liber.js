@@ -358,10 +358,10 @@ $.remvoe = function(el){
 	if(el&&el.remove)el.remove();
 }
 $.show = function(el){
-	if(el&&el.remove)el.show(); return el;
+	if(el&&el.show)el.show(); return el;
 }
 $.hide = function(el){
-	if(el&&el.remove)el.hide(); return el;
+	if(el&&el.hide)el.hide(); return el;
 }
 
 	
@@ -489,14 +489,14 @@ var $app = {
 		// console.log("loaded:",$app.start_view);
 		$app.openView($app.start_view);
 	},
-	handle : function(type, view){
+	handle : function(type, view, data){
 		switch(type){
 			case "stop":
 				return $app.stop();
 			case "loaded":
 				return $app.drawView(view);
 			case "close":
-				return $app.closeView(view);
+				return $app.closeView(view,data);
 			case "front":
 				return $app.bringViewToFront(view);
 			default:
@@ -543,14 +543,26 @@ var $app = {
 				if(!view.close || !view.loaded){
 					view.name = view.name|| vname;
 					$.extend(view, $controller);
+					console.log("extend:",view.extend,window[view.extend]);
+					if($.isString(view.extend) && $.isObject(window[view.extend])){
+						console.log("extending:",view.extend);
+						$.extend(view, window[view.extend]);
+					}
+						
 				}
+
 				view.params = params;
-				if(popup && opener)
-					view.opener = opener.name;
-				$this = view;
-				$app.views.push(vname);	
+				if(opener)
+					view.opener = opener;
 				if(opener && opener.onInactive) 
 					opener.onInactive.call(opener,view);
+				if(popup)
+					view.isPopup = true;
+				
+				$app.views.push(vname);	
+				
+				$this = view;
+
 				if(view.onload)view.onLoad = view.onload;
 				if(view.onLoad)
 					view.onLoad.call(view,params);
@@ -569,42 +581,26 @@ var $app = {
 				document.body.appendChild(view.layer);
 			$app.bringViewToFront(view);
 			if(view.onActive) {
-				view.onActive.call(view,$app.last_view? window[$app.last_view]:null);
+				view.onActive.call(view);
 				$app.last_view = null;
 			}
 		}else{
-			if(!view.opener)
+			if(!view.isPopup)
 				$app.hideOthers(view);
 			view.drawView.call(view, $app.viewIdx++);
 		}
 	},
-	closeView : function(view){
+	closeView : function(view,data){
 		// console.log("app::closeView",view.name);
 		if(view.onClose)
 			view.onClose();
 		if(view.layer)
 			view.layer.remove();
-		$app.views.pop();
-		if(view.opener){
-			view.opener = false;
-			$app.last_view = view.name;
-		}else{
-			var lv;
-			for(var i=$app.views.length-1;i>=0;i--){
-				var v = window[$app.views[i]];
-				if(v.layer && v.layer.style.display=="none"){
-					lv = v; break;
-				}
-			}
-			lv = lv || window[$app.start_view];
-			lv.layer.show();
-		}
-
-		$this =($app.views.length>=1)? window[$app.views.pop()]:window[$app.start_view];
-
+		$app.views.pop();//popup itself
+		$this = view.opener || window[$app.start_view];
+		$this.layer.show();
 		if($this && $this.onActive){
-			$this.onActive.call($this,$app.last_view? window[$app.last_view]:null);
-			$app.last_view = null;
+			$this.onActive.call($this,view,data);
 		}
 	},
 
@@ -631,12 +627,11 @@ var $app = {
 
 var $controller = {
 	loaded : function(){
-		// console.log("controller::loaded");
 		$app.handle("loaded",$this);
 	},
-	close : function(){
+	close : function(data){
 		// console.log("controller::close");
-		$app.handle("close",$this);
+		$app.handle("close",$this,data);
 	},
 	reload : function(params){
 		this.params = params || this.params;
@@ -646,7 +641,7 @@ var $controller = {
 	drawView : function(idx){
 		// console.log("controller::drawView");
 		var view = this;
-		var layer = $article({idx:idx,"class":view.opener?"view popup "+view.name:"view "+view.name,view:view.name},document.body);
+		var layer = $article({idx:idx,"class":view.isPopup?"view popup "+view.name:"view "+view.name,view:view.name},document.body);
 		//FIXME
 		layer.css({
 			width: "100%",height: "100%",zIndex:100+idx,position: "absolute",
@@ -723,6 +718,31 @@ String.prototype.unescape = function() {
     var regexp = new RegExp('(' + $.keys($.__HTML_UESC).join('|') + ')', 'g');
     return this.replace(regexp, function(m){return $.__HTML_UESC[m];});
 },
+
+String.prototype.validate = function(type){ 
+	var val;
+	if(type.indexOf(":")) {
+		var parts = type.split(":");
+		type = parts[0]; val = parts[1];
+	}
+	switch(type){
+		case "email":
+			return /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(.+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(this);
+		case "phone-jp":
+    		return /^[a-zA-Z0-9\-().\s]{8,15}$/.test(this);
+    	case "zipcode-jp":
+    		return /^\d{5}(-\d{4})?$/.test(this);
+    	case "url":
+    		var re = new RegExp(
+        	    "^((http|https|ftp)\://)*([a-zA-Z0-9\.\-]+(\:[a-zA-Z0-9\.&amp;%\$\-]+)*@)*((25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9])\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[0-9])|([a-zA-Z0-9\-]+\.)*[a-zA-Z0-9\-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(\:[0-9]+)*(/($|[a-zA-Z0-9\.\,\?\'\\\+&amp;%\$#\=~_\-]+))*$");
+    		return re.test(this);
+    	case "len":
+    		var min = parseInt(parts[1]);
+			var max = parts.length==3 ? parseInt(parts[2]): 0;
+ 			return (max>0) ?this.length>=min && this.length<=max : this.length>=min;
+ 	}
+	return true;
+};
 
 
 NodeList.prototype.each = function(func){
@@ -970,8 +990,13 @@ var __element = {
 		}
 	},
 
-	find : function(q){var qs=q.split(" "),qu=qs[qs.length-1];var r=this.querySelectorAll(q);return qu.indexOf("#")==0?r[0]:r;},
+	find : function(q,f){var qs=q.split(" "),qu=qs[qs.length-1];var r=this.querySelectorAll(q);
+		if($.isFunc(f)) for(var i=0,el;el=r[i];i++) f(el,i);
+		return qu.indexOf("#")==0?r[0]:r;
+	},
 	
+	find1st : function(q){var qs=q.split(" "),qu=qs[qs.length-1];var r=this.querySelectorAll(q);return r?r[0]:null;},
+
 	bind : function(arg1, arg2){
 		if(typeof(arg1)=="string"){
 			//if(arg1=="click"&&$browser.device=="smartphone")arg1=this.getAttribute("touch")||"touchstart";		
@@ -1041,7 +1066,8 @@ var __element = {
 	},
 
 	hide : function(time){
-		if(this.style.display) this.attr("__orgDisplay",this.style.display);
+		if(this.style.display!="none" && !this.attr("__orgDisplay")) 
+			this.attr("__orgDisplay",this.style.display);
 		if(time>0)
 			this.animate({duration:time,style:"easeIn",step:function(el,delta){
 				el.style.opacity=1-delta;
@@ -1052,6 +1078,8 @@ var __element = {
 		return this;
 	},
 	show : function(time){
+		if(this.style.display!="none" && !this.attr("__orgDisplay")) 
+			this.attr("__orgDisplay",this.style.display);
 		if(time>0)
 			this.css({"display":this.attr("__orgDisplay")||"block","opacity":0}).animate({duration:time,style:"easeOut",step:function(el,delta){
 				el.style.opacity=delta;
@@ -1342,77 +1370,38 @@ for(var i=0;i<__tags.length;i++){
 //["table","tr","th","td","div","img","ul","lo","li","p","i","a","b","strong","textarea","br","hr","form","input","span","label","h1","h2","h3","canvas"].forEach();
 
 /**
- * checkbox / select-option / radiobox
+ * checkbox / radiobox
  * 
- * @params options : {value:label, value:label ...}
+ * @params options : [{label:"label1",value:"value1"},{label:"label2",value:"value2"}}
  * @params attrs : {
- * 			id:xxxx ,//required 
  * 			name:xxxx, //required name of form item
- * 			multiple : 1|0 //1 :select(multi) || checkbox, 0:radio||select(single)
- * 			optionClass: classname of li
- * 			labelClass: classname of li.div
- *			formId : optional 	
- *			eventType : touchstart | touchend | mouseup | click		
- * 			noLabel:true|false //default=false, hide label text
- * 			drawOption:function(optLI,idx)
+ * 			type:checkbox|radio //required.
+ * 			drawOption : function(el, i, attrs ){} //custom drawing,
+ * 			             // el=<label>-<input> element, i=index, 
+ * 			onclick : function(){},... //other events are also supported
  * 		}
  * @params target //which dom to insert
  * 
  * */
 var $sel = function(options,attrs,target){
-	//var opts = [];
-	if(!window._sel_handler)
-	window._sel_handler = function(e){
-		e = e || window.event;
-		var lb = e.target || e.srcElement,
-			li = lb.tagName.toUpperCase()=="LI"?lb: lb.parentNode;
-		lb = li.childNodes[0];
-		var id = li.name,
-			ipt = $id(id+"-input"),
-			tv = li.attr("value"),
-			isMulti = 1==li.attr("multiple");
-		if(isMulti){
-			if(li.className.match(/\son$/)){
-				li.className = li.className.replace(/\son$/g,'');
-				lb.className = lb.className.replace(/\son$/g,'');
-			}else{
-				li.className += " on";
-				lb.className += " on";
-			}
-			var vs = [];
-			$("#"+id+"-list .on",function(el){
-				if(el.tagName.toUpperCase()=="LI")
-					vs.push(el.getAttribute("value"));
-			});
-			ipt.value = vs.join(',');
-		}else{
-			if(tv == ipt.value){
-				ipt.value = "";
-			}else{
-				$("#"+id+"-list .on", function(el){el.className = el.className.replace(/\son$/,'');});
-				li.className+=" on";
-				li.childNodes[0].className+=" on";
-				ipt.value = tv;
-			}
+	var onclick = attrs.onclick;
+	delete attrs["onclick"];
+	var values = attrs.value||[];
+	if($.isString(values))
+		values = values.split(",");
+	var drawFunc = $.isFunc(attrs.drawOption)?attrs.drawOption:null;
+	for(var i=0,o;o=options[i];i++){
+		var lb = $label({},target);
+		if(drawFunc) drawFunc(lb,i);
+		else{
+			lb.attr({html:o.label}).css({position:"relative","padding-left":"20px","text-align":"left"});
+			$input({type:attrs.type, name:attrs.name, value:o.value, checked:values.indexOf(o.value)>=0?true:false},lb)
+				.css({display:"block",position:"absolute",left:0,top:"50%",transform:"translateY(-50%)"});
+			if(onclick) dd.bind("click",onclick);
 		}
-	};
-	var valuestr = attrs.value && attrs.multiple? "#"+ attrs.value.split(',').join('#,#') + "#" : attrs.value||"",
-		isMulti = 1==attrs.multiple||true==attrs.multiple,
-		container = $div({id:attrs.id},target),
-		list = $ul({id:attrs.id+"-list"},container),
-		idx = 0,
-		eventType = attrs.eventType||"click",
-		drawOpt = attrs.drawOption;
-	for(var v in options){
-		var surfix = (isMulti)?((valuestr.indexOf('#'+v+"#")>=0)?" on":""): ((attrs.value == v)?" on":"");
-		var lOpt = attrs.noLabel==true ? {className:attrs.labelClass?attrs.labelClass+surfix:surfix,html:"&nbsp;"}:{className:attrs.labelClass?attrs.labelClass+surfix:surfix,html:options[v]};
-		var opt = $li([$div(lOpt)],list)
-			.attr({name:attrs.id, value:v,idx:idx, multiple:isMulti?1:0,className:attrs.optionClass?attrs.optionClass+surfix:surfix}).bind(eventType, window._sel_handler);
-		if(drawOpt)drawOpt(opt,idx);
-		idx++;
+			
 	}
-	$input({name:attrs.name, id:attrs.id+"-input", className:attrs.formId?'form-item-'+attrs.formId:"", type:'hidden',value:attrs.value?attrs.value:''},container);
-	return container;
+
 };
 
 var $radio = function(options,attrs,target){
