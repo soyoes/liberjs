@@ -166,8 +166,8 @@ var form_view = {
 
 	drawFooter : function(f){
 		$a({href:"./examples.html",html:"back"},$div({},f));
-		$button("保存", f).bind("click", $this.formSubmit);
-		$button("クリア", f).bind("click", $this.formReset);
+		$button("保存", f).bind("click", $this.submitForm);
+		$button("クリア", f).bind("click", $this.resetForm);
 
 	}
 }

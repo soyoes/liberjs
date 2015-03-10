@@ -88,7 +88,7 @@ var $form_view ={
 		$this.form = form;
 	},
 
-	formSubmit : function(){
+	submitForm : function(){
 		if(!$this.formURL||!$this.formItems)return;//TODO $app.onError
 		//remove errs
 		$this.form.find("i",function(err){err.attr({html:""}).css({opacity:1});});
@@ -145,7 +145,7 @@ var $form_view ={
 		
 	},
 
-	formReset : function(){
+	resetForm : function(){
 		$this.form.find("i",function(err){err.attr({html:""}).css({opacity:1});});
 		$this.form.find(".error",function(el){el.removeClass("error");});
 		for(var i=0,o;o=$this.formItems[i];i++){
