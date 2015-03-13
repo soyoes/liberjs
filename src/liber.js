@@ -204,14 +204,6 @@ $.preload = function(files, onfileLoad, onfileError){
     	img.src = f;
     }
 }
-$.keyCode = function(e){
-	if(document.all)
-    	return e.keyCode;
-	else if($id)
-    	return (e.keyCode)? e.keyCode: e.charCode;
-	else if(document.layers)
-    	return e.which;
-}
 
 $.clone = function(o){
 	if(typeof(o)==="object")
@@ -363,6 +355,9 @@ $.show = function(el){
 $.hide = function(el){
 	if(el&&el.hide)el.hide(); return el;
 }
+$.fire = function(el){
+	if(el&&el.fire)el.fire(); return el;
+}
 
 	
 	
@@ -423,6 +418,7 @@ var $app = {
 	status : "normal",
 	viewIdx : 1,
 	views : [],
+	legacy : false, //check if its liber.js 1.x
 	start : function(start_view){
 		if($app.status=="stopped")
 			throw new Error("This app has been stopped for some reason.");
@@ -437,6 +433,8 @@ var $app = {
 		};
 		for(var i in __default)
 			if(!$conf[i])$conf[i]=__default[i];
+
+		$app.legacy = $conf.modules.indexOf("liber.legacy")>=0;
 
 		//init history handler
 		window.onhashchange = function (e) {
@@ -659,6 +657,8 @@ var $controller = {
 				view.layer.remove();
 			view.layer = layer;
 			view.content = c;
+			if($app.legacy)
+				view.wrapper=c;
 			view.drawContent.call(view, c, layer);
 		}
 		if(!view.noFooter){
@@ -888,7 +888,7 @@ var __element = {
 					arg2 = arg2.replace("url(", "url("+$conf.image_path);
 				}
                 if ($browser.name == "Firefox")
-                    this.style.setProperty(arg1, arg2);
+                    this.style.setProperty(arg1.replace(/[A-Z]/g,function(v){return "-"+v.toLowerCase();}), arg2);
                 else
                     this.style[arg1] = arg2;
             } else
@@ -1312,7 +1312,6 @@ NOT IN USE (Others) : "rp"-"rt"-"ruby","object"-"param","noscript",
 NOT IN USE (Duplicated) : "del" -> "s", "blockquote" -> "q", "ins" -> "u"
 
 Override : "select"(with TODO:"optgroup","option") -> use $select() instead
-Override : "title" -> use $ui.title(str) instead
 Override : "style" -> use $styles(rules, target) instead
 
 TODO datalist -> for safari
