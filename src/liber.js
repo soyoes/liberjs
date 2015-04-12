@@ -7,8 +7,8 @@
  */
 
 
-$conf=$conf||{};
-$ui={};
+var $conf=$conf||{};
+var $ui={};
 /**
  * @return {
  * 	name:
@@ -17,7 +17,7 @@ $ui={};
  * 	os: windows|mac|linux 
  * }
  * */
-$browser = (function(){
+var $browser = (function(){
     var N= navigator.appName, ua= navigator.userAgent, tem;
     var M= ua.match(/(opera|chrome|safari|firefox|msie)\/?\s*(\.?\d+(\.\d+)*)/i);
     if(M && (tem= ua.match(/version\/([\.\d]+)/i))!= null) M[2]= tem[1];
@@ -40,7 +40,7 @@ function $id(domid){
 }
 /* shot cuts */
 // if(!$) //to support jquery
-$ = function(query,each){
+var $ = function(query,each){
 	var usingView = ($app.status === "loaded" && $this && $this.layer);
 	var res = usingView? $this.layer.find(query):document.querySelectorAll(query);
 	if(res){
@@ -72,7 +72,7 @@ $.__eventOpts = {
 $.__HTML_ESC={ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;' };
 $.__HTML_UESC={ '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#x27;': "'" };
 
-__={},/**runtimes variables will be deleted in ?ms */
+var __={},/**runtimes variables will be deleted in ?ms */
 __set=function(k,v,ms){__[k] = v;ms=ms||300;setTimeout(function(key){delete __[key];}, ms, k);},
 __clear=function(){__={};};
 
@@ -504,8 +504,7 @@ var $app = {
 	trans : function(e){
 		var url = this.getAttribute("url");
 		if(url && $.isString(url)){
-			// console.log(url, target.tagName);
-			if(url.match(/@\?*/g)) //is popup
+			if(url.match(/@\?*/)) //is popup
 				$app.openView(url.replace('@?','?'), true);
 			else {
 				if(this.tagName!="A")
@@ -541,7 +540,7 @@ var $app = {
 				if(!view.close || !view.loaded){
 					view.name = view.name|| vname;
 					$.extend(view, $controller);
-					console.log("extend:",view.extend,window[view.extend]);
+					// console.log("extend:",view.extend,window[view.extend]);
 					if($.isString(view.extend) && $.isObject(window[view.extend])){
 						console.log("extending:",view.extend);
 						$.extend(view, window[view.extend]);
@@ -951,7 +950,7 @@ var __element = {
 		e = e||window.event;
 		var type = e.type,
 			idx = this.attr('__idx__')+"";
-		if($browser.device=="smartphone"){
+		if($browser.device=="smartphone" && (type=="touchstart"||type=="touchend")){
 			//handlers = $.__rfuncs[idx]?$.__rfuncs[idx][type]||[];
 			switch(type){
 				case "touchstart":
@@ -974,8 +973,9 @@ var __element = {
 					this.removeAttribute("__touchSX");
 					this.removeAttribute("__touchSY");
 					break;
-				default:break;
-			}
+				default:
+					break;
+			}	
 		}else{
 			var handlers = $.__rfuncs[idx]?$.__rfuncs[idx][type]:null;
 			//console.log(handlers);
