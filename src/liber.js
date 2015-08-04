@@ -43,11 +43,16 @@ function $id(domid){
 var $ = function(query,each){
 	var usingView = ($app.status === "loaded" && $this && $this.layer);
 	var res = usingView? $this.layer.find(query):document.querySelectorAll(query);
-	if(res){
-		if(each) res.each(each);
-		var qs=query.split(" "),qu=qs[qs.length-1];
-		res = qu.indexOf("#")==0? res[0]:res;
-	}
+	if (usingView) {
+		res =  $this.layer.find(query,each)
+	}else{
+		res = document.querySelectorAll(query);
+		if(res){
+			if(each) res.each(each);
+			var qs=query.split(" "),qu=qs[qs.length-1];
+			res = qu.indexOf("#")==0? res[0]:res;
+		}		
+	};
 	return res;
 }
 
