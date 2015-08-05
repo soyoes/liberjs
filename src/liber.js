@@ -6,32 +6,58 @@
  * 
  */
 
-
 var $conf=$conf||{};
 var $ui={};
 /**
  * @return {
- * 	name:
- * 	version:float
- * 	device: smartphone|pc
- * 	os: windows|mac|linux 
+ * 	name:MSIE|Firefox|Chrome|Safari|Opera|iPhone|iPad|iPod|Android|BlackBerry|IEMobile
+ * 	ver:float
+ * 	os: Win|Mac|Linux|iPhone|iPod|iPad|Android|IEMobile|BlackBerry
+ * 	osver : float //mobile only
+ * 	osname : WinXP|Vista|Win7|Win8|Win8.1|Win10 //Windows only
+ * 	mobile : true|false //Mobile only
+ * 	simulator : true|false  //mobile only
  * }
  * */
 var $browser = (function(){
-    var N= navigator.appName, ua= navigator.userAgent, tem;
-    var M= ua.match(/(opera|chrome|safari|firefox|msie)\/?\s*(\.?\d+(\.\d+)*)/i);
-    if(M && (tem= ua.match(/version\/([\.\d]+)/i))!= null) M[2]= tem[1];
-    M= M? [M[1], M[2]]: [N, navigator.appVersion, 0];
-    var isSM = ua.match(/(iPhone|iPod|Android)/i);//TODO : blackberry
-    var browser = {name:M[0], version:parseInt(M[1]), device:isSM?"smartphone":"pc"};
-    var av=navigator.appVersion;
-    var osnames = {"Win":"windows","Mac":"mac","X11":"linux","Linux":"linux"};
-    for(var k in osnames){if(av.indexOf(k)>=0){browser.os = osnames[k]; break;}}
-    if(browser.name=="MSIE"&&!window.atob){ //IE ver<=9, TODO add other browser check
-    	if($app.onError)
-    		$app.onError("unsupported_error");
-    }
-    return browser;
+	var ua=navigator.userAgent,u,p=navigator.platform,r={},
+		n=ua.match(/(MSIE|Trident|Firefox|Chrome|Safari|Opera)[\/\s](\d+\.*\d*)/i);
+	// console.log(i,n,p);
+	r.name = n?n[1].toLowerCase():"unknown";
+	r.ver = n?parseFloat(n[2]):0;
+	if(r.name=="trident"){
+		r.name = "msie";
+		n = ua.match(/rv:(\d+\.?\d*)/);
+		if(n) r.ver=parseFloat(n[1]);
+	}
+	if(r.name=="safari"){
+		n = ua.match(/Version\/(\d+\.*\d*)/);
+		if(n) r.ver=parseFloat(n[1]);
+	}
+	if( u = ua.match(/(iphone|ipad|ipod|android|iemobile|blackberry)/i) ){//mobile, supports iphone, android, mobileIE only.
+		r.os = u?u[0].toLowerCase():"Unknown";
+		var mptn = {'iphone':/^iphone/i,'ipad':/^ipad/i,'ipod':/^ipod/i,'android':/^linux\s(arm|i)/i,'iemobile':/win/i};
+		r.simulator = !p.match(mptn[r.os]); //check its device or simulator
+		if(u=ua.match(/(iPhone|iPad|iPod)\sOS\s([\d_]+)/i))
+			r.osver=u[2].split("_").join(".");
+		if(u=ua.match(/(Android|BlackBerry|Windows\sPhone\sOS)\s([\d\.]+)/i))
+			r.osver=u[2];
+		r.name = r.name=='unknown'? r.os:r.name;
+		r.mobile = true;
+	}else{ //pc
+		u = p.match(/(x11|linux|mac|win)/i);
+		r.os = u?(u[0].toLowerCase()=='x11'?"linux":u[0].toLowerCase()):"unknown";
+		if(u=ua.match(/Mac\sOS\sX\s([\d_]+)/i)){
+			r.osver=u[1].split("_").join(".");
+		}
+		if(u=ua.match(/Windows\sNT\s([\d\.]+)/i)){
+			r.osver = u[1];
+			r.osname = {'5.1':'WinXP','5.2':'WinXP','6.0':'Vista','6.1':'Win7','6.2':'Win8','6.3':'Win8.1','10.0':'Win10'}[r.osver];
+		}
+	}
+	if((r.name=="Unknown"||r.os=="Unknown")&&$app.onError)
+		$app.onError("unsupported_error");
+	return r;
 })();
 
 function $id(domid){
@@ -57,8 +83,6 @@ var $ = function(query,each){
 }
 
 $.args=null,
-$.__rfuncs = {};//runtime funcs
-$.__rid=0,//runtimeIdx
 $.__events = {
 	'HTMLEvents': /^(?:load|unload|abort|error|select|change|submit|reset|focus|blur|resize|scroll)$/,
 	'MouseEvents': /^(?:click|dblclick|touch(start|end|up|cancel)|mouse(?:down|up|over|move|out))$/
@@ -363,8 +387,6 @@ $.hide = function(el){
 $.fire = function(el){
 	if(el&&el.fire)el.fire(); return el;
 }
-
-	
 	
 /**
 * return mouse position;
@@ -398,7 +420,6 @@ $.uploadWindow = function(callback,multiple){
 		var params = {id:iname,type:"file", name:"tempfile"};
 		if(multiple) params["multiple"] = "multiple";
 		var ipt = $input(params,imgform);
-		/*evType = $browser.name=="MSIE"&&$browser.version<9 ? "focus":"change";*/
 		ipt.bind("change",callback);
 		ipt.fire("click");
 	}else{
@@ -427,6 +448,14 @@ var $app = {
 	start : function(start_view){
 		if($app.status=="stopped")
 			throw new Error("This app has been stopped for some reason.");
+
+		if($browser.mobile){
+			document.body.addEventListener("touchstart",function(e){
+       			window.TSX = e.changedTouches[0].screenX;
+        		window.TSY = e.changedTouches[0].screenY;
+		    });	
+		}
+		
 		$app.start_view = $.isString(start_view)?start_view:$conf.default_view;
 		if(!$app.start_view){
 			if($app.onError)$app.onError("no_start_view_error");
@@ -512,17 +541,17 @@ var $app = {
 			if(url.match(/@\?*/)) //is popup
 				$app.openView(url.replace('@?','?'), true);
 			else {
+				var isSM = $browser.mobile && !$browser.simulator;
+				var evName = isSM?"touchstart":"click";
+				//FIXME!!!:: check if this element has touchstart event.
 				if(this.tagName!="A")
-					$a({href:"#"+url, html:"_"},document.body).css({opacity:0}).fire("click");
-					// .onload = function(e){
-					// 	e = e||window.event;var t=e.target||e.srcElement;
-					// 	console.log("a.onload",t);
-					// 	t.fire("click");
-					// };
+					$a({href:"#"+url, html:"_"},document.body).css({opacity:0}).fire(evName);
 				else
-					this.fire("click");	
+					this.fire(evName);	
 			}
 		}
+		e = e||window.event;
+		e.stopPropagation();
 	},
 	openView : function(url, popup){
 		// console.log("openview",url);
@@ -547,7 +576,7 @@ var $app = {
 					$.extend(view, $controller);
 					// console.log("extend:",view.extend,window[view.extend]);
 					if($.isString(view.extend) && $.isObject(window[view.extend])){
-						console.log("extending:",view.extend);
+						// console.log("extending:",view.extend);
 						$.extend(view, window[view.extend]);
 					}
 						
@@ -651,8 +680,8 @@ var $controller = {
 		});
 
 		if(!view.noHeader){
-			var h = $header({},layer);
-			h =  view.drawHeader? view.drawHeader.call(view,h,layer):($app.drawHeader? $app.drawHeader(h):h);
+			view.header = $header({},layer);
+			view.header = view.drawHeader? view.drawHeader.call(view,view.header,layer):($app.drawHeader? $app.drawHeader(view.header):view.header);
 		}
 
 		var c = $section({},layer);
@@ -666,8 +695,8 @@ var $controller = {
 			view.drawContent.call(view, c, layer);
 		}
 		if(!view.noFooter){
-			var f = $footer({},layer);
-			f =  view.drawFooter? view.drawFooter.call(view,f,layer):($app.drawFooter? $app.drawFooter(f):f);
+			view.footer = $footer({},layer);
+			view.footer =  view.drawFooter? view.drawFooter.call(view,view.footer,layer):($app.drawFooter? $app.drawFooter(view.footer):view.footer);
 		}
 	},
 
@@ -861,8 +890,9 @@ var __element = {
 			var c = this.getAttribute("class")||"";
 			c=c.length>0?c+" ":"";
 			this.setAttribute("class",c+cls);
-		}else
-			if(this.className.indexOf(cls)<0){this.className += " "+cls;}	
+		}else{
+			if(this.className.indexOf(cls)<0){this.className = this.className+" "+cls;}	
+		}
 		return this;
 	},
 	
@@ -951,49 +981,22 @@ var __element = {
 		return this;
 	},
 
-	handle : function(e){
-		e = e||window.event;
-		var type = e.type,
-			idx = this.attr('__idx__')+"";
-		if($browser.device=="smartphone" && (type=="touchstart"||type=="touchend")){
-			//handlers = $.__rfuncs[idx]?$.__rfuncs[idx][type]||[];
-			switch(type){
-				case "touchstart":
-					this.attr("__touchSX",e.changedTouches[0].pageX);
-        			this.attr("__touchSY",e.changedTouches[0].pageY);
-        			break;
-				case "touchend":
-					var th = $.__rfuncs[idx]?$.__rfuncs[idx][type]:[],
-						x = e.changedTouches[0].pageX,
-						y = e.changedTouches[0].pageY,
-						ox = parseFloat(this.attr("__touchSX")),
-						oy = parseFloat(this.attr("__touchSY"));
-					if(th && th.length>0 && Math.abs(ox-x) + Math.abs(oy-y)<=10){
-						for(var i=th.length-1;i>=0;i--){
-							//var o = eval("("+th[i]+")");
-							var o = th[i];
-							if($.isFunc(o.func)) o.func.apply(this, [e].concat(o.args));
-						}
-					};
-					this.removeAttribute("__touchSX");
-					this.removeAttribute("__touchSY");
-					break;
-				default:
-					break;
-			}	
-		}else{
-			var handlers = $.__rfuncs[idx]?$.__rfuncs[idx][type]:null;
-			//console.log(handlers);
-			if(handlers){
-				//handlers = JSON.parse(handlers);
-				for(var i=handlers.length-1;i>=0;i--){
-					//var o = eval("("+handlers[i]+")");
-					var o = handlers[i];
-					if($.isFunc(o.func)) o.func.apply(this, [e].concat(o.args));
-				}
-			}	
-		}
-	},
+	// attach : function(type, func){
+	// 	if($.isString(type)){
+	// 		this.addEventListener(type.replace(/^on/,''),func,false);	
+	// 	}else if($.isObject(type)){
+	// 		for(var k in type){
+	// 			this.attach(k, type[k]);
+	// 		}
+	// 	}
+	// 	return this;
+	// },
+
+	// handle : function(e){
+	// 	e = e||window.event;
+	// 	var type = e.type;
+	// 	this["on"+e.type].apply(this,arguments);
+	// },
 
 	find : function(q,f){var qs=q.split(" "),qu=qs[qs.length-1];var r=this.querySelectorAll(q);
 		if($.isFunc(f)) for(var i=0,el;el=r[i];i++) f(el,i);
@@ -1004,23 +1007,19 @@ var __element = {
 
 	bind : function(arg1, arg2){
 		if(typeof(arg1)=="string"){
-			//if(arg1=="click"&&$browser.device=="smartphone")arg1=this.getAttribute("touch")||"touchstart";		
 			if(arg2){
 				arg1 = arg1.replace(/^on/,'');
-				var i = this.getAttribute("__idx__")+"";
-				if(!$.__rfuncs[i])
-					$.__rfuncs[i] = [];
-				var curr = $.__rfuncs[i][arg1]||[];
-				var fo = {
-					func : arg2,
-					args : Array.prototype.slice.call(arguments).slice(2)
-				};
-				curr.push(fo);
-				$.__rfuncs[i][arg1] = curr;
-				var es = ((arg1=="tap"||arg1=="touch")&&$browser.device=="smartphone")?["touchstart","touchend"]:[arg1];
-				for(var i=0;i<es.length;i++){
-					this.addEventListener(es[i],this.handle,false); //NO IE8 support any longer	
-				}
+				if(!$browser.mobile && arg1.indexOf("touch")==0) 
+					arg1 = {"touchstart":"click","touchmove":"mousemove","touchend":"mouseup"}[arg1];
+				if($browser.mobile && arg1=='click'){
+					var el = this;var handler = arg2;
+					this.addEventListener('touchend', function(e){
+						var x = e.changedTouches[0].screenX,y = e.changedTouches[0].screenY;
+						if(Math.abs(x-TSX)>12||Math.abs(y-TSY)>12)return;
+						handler.apply(el,e);
+					}, false);
+				}else
+					this.addEventListener(arg1, arg2, false);
 			}
 		}else if(typeof(arg1)=="object" && !arg2){
 			for(var f in arg1){
@@ -1030,20 +1029,41 @@ var __element = {
 		return this;
 	},
 
-	unbind : function(evname){
-		// this.attr("__on"+evname,false);
-		//this.removeAttribute("__on"+evname);
-		var i = this.getAttribute('__idx__');
-		if($.__rfuncs[i]) delete $.__rfuncs[i];
-		return this;
+	unbind : function(){
+		console.log("ERR : unbind is removed, since it will lead a performance problem. use lock,unlock instead.")
+	},
+
+	/**
+	 * be careful this will unbind all
+	 * @return {[type]} [description]
+	 */
+	lock : function(){
+		var mirror=this.clone(false).attr("__clone","true");
+		this.hide().attr("__lock","true");
+		return mirror;
+	},
+	unlock : function(){
+		var org = this.nextSibling;
+		if(this.attr("__clone") && org&&org.attr("__lock","true")){
+			this.remove();
+			org.show().removeAttribute("__lock");
+		}
+		return org;
 	},
 
 	/**
 	 * clone a element including childs and append to target.
-	 * @param  target:optional, target to append to 
+	 * @param  replace:optional, insert the new clone obj before current one.and distory current one.
 	 * @return cloned DOMElement.
 	 */
-	clone : function(target){var c=this.cloneNode(true);if(target)target.appendChild(c);return c;},
+	clone : function(replace){
+		var c=this.cloneNode(true);
+		if(replace && this.parentNode){
+			this.parentNode.insertBefore(c, this);
+			this.remove();
+		}
+		return c;
+	},
 	
 	rect : function(){
 		var scrollTop = (document.documentElement && document.documentElement.scrollTop) || document.body.scrollTop,
@@ -1249,7 +1269,6 @@ $.extend(Element.prototype,__element);
 var $e = function(type, args, target, namespace){
 	type = namespace? type.replace(/_/g, "-"):type;
 	var _el = namespace? document.createElementNS(namespace,type):document.createElement(type);
-	_el.setAttribute("__idx__",$.__rid++);
 	if(target && typeof(target)=="string")
 		target = $id(target);
 	if(args){
@@ -1421,7 +1440,7 @@ var $checkbox = function(options,attrs,target){
 //window.CHECKBOX = $checkbox;
 
 var $select = function(values,attrs,target){
-	if($browser.name=="MSIE" && $browser.version<9 && attrs.name ){
+	if($browser.name=="MSIE" && $browser.ver<9 && attrs.name ){
 		var sele = document.createElement(["<select name=", attrs.name, "></select>"].join("\'"));
 		sele.attr(attrs);
 		if(target)
@@ -1457,8 +1476,9 @@ var $select = function(values,attrs,target){
  * */
 var $styles=function(rules,target,id){
 	target = target||document.body;
-	var sid = id?id: "runtime_rule_"+(++$.__rid),
-		cs = $e('style',{type:"text/css",id:sid},target);
+	var opt = {type:"text/css"};
+	if(id)opt.id = id;
+	var cs = $e('style',opt,target);
 	var tn = document.createTextNode("");
 	if(typeof(rules)=="string"){
 		tn.appendData(rules);
@@ -1566,7 +1586,8 @@ var $http = {
   		}
   		method =method.toUpperCase();  
   		xhr.open(method,url,true);
-  		// console.log(url,method);
+  		if(!$browser.mobile)
+  			console.log(url,method);
   		if(method == 'POST' || method == 'PUT' || method == 'DELETE'){
   			xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
   			xhr.send(userdata);
