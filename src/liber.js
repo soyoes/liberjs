@@ -729,7 +729,7 @@ String.prototype.trim = function() {
     return this.replace(/^\s+|\s+$/g, "");
 };
 String.prototype.CJKLength = function() {
-	var str = escape(this).replace(/%u.{4}/gm,"1");
+	var str = escape(this).replace(/%u.{4}/gm,"1").replace(/%.{2}/gm,"1");
 	return str.length;
 };
 String.prototype.splice = function( idx, len, sub ) {
