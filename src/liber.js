@@ -57,7 +57,7 @@ var $browser = (function(){
 	}
 	if((r.name=="Unknown"||r.os=="Unknown")&&$app.onError)
 		$app.onError("unsupported_error");
-	return r;
+    return r;
 })();
 
 function $id(domid){
@@ -69,20 +69,17 @@ function $id(domid){
 var $ = function(query,each){
 	var usingView = ($app.status === "loaded" && $this && $this.layer);
 	var res = usingView? $this.layer.find(query):document.querySelectorAll(query);
-	if (usingView) {
-		res =  $this.layer.find(query,each)
-	}else{
-		res = document.querySelectorAll(query);
-		if(res){
-			if(each) res.each(each);
-			var qs=query.split(" "),qu=qs[qs.length-1];
-			res = qu.indexOf("#")==0? res[0]:res;
-		}		
-	};
+	if(res){
+		if(each) res.each(each);
+		var qs=query.split(" "),qu=qs[qs.length-1];
+		res = qu.indexOf("#")==0? res[0]:res;
+	}
 	return res;
 }
 
 $.args=null,
+$.__rfuncs = {};//runtime funcs
+$.__rid=0,//runtimeIdx
 $.__events = {
 	'HTMLEvents': /^(?:load|unload|abort|error|select|change|submit|reset|focus|blur|resize|scroll)$/,
 	'MouseEvents': /^(?:click|dblclick|touch(start|end|up|cancel)|mouse(?:down|up|over|move|out))$/
@@ -448,14 +445,6 @@ var $app = {
 	start : function(start_view){
 		if($app.status=="stopped")
 			throw new Error("This app has been stopped for some reason.");
-
-		if($browser.mobile){
-			document.body.addEventListener("touchstart",function(e){
-       			window.TSX = e.changedTouches[0].screenX;
-        		window.TSY = e.changedTouches[0].screenY;
-		    });	
-		}
-		
 		$app.start_view = $.isString(start_view)?start_view:$conf.default_view;
 		if(!$app.start_view){
 			if($app.onError)$app.onError("no_start_view_error");
@@ -550,8 +539,6 @@ var $app = {
 					this.fire(evName);	
 			}
 		}
-		e = e||window.event;
-		e.stopPropagation();
 	},
 	openView : function(url, popup){
 		// console.log("openview",url);
@@ -576,7 +563,7 @@ var $app = {
 					$.extend(view, $controller);
 					// console.log("extend:",view.extend,window[view.extend]);
 					if($.isString(view.extend) && $.isObject(window[view.extend])){
-						// console.log("extending:",view.extend);
+						console.log("extending:",view.extend);
 						$.extend(view, window[view.extend]);
 					}
 						
@@ -729,7 +716,7 @@ String.prototype.trim = function() {
     return this.replace(/^\s+|\s+$/g, "");
 };
 String.prototype.CJKLength = function() {
-	var str = escape(this).replace(/%u.{4}/gm,"1");
+	var str = escape(this).replace(/%u.{4}/gm,"1").replace(/%.{2}/gm,"1");
 	return str.length;
 };
 String.prototype.splice = function( idx, len, sub ) {
@@ -890,9 +877,8 @@ var __element = {
 			var c = this.getAttribute("class")||"";
 			c=c.length>0?c+" ":"";
 			this.setAttribute("class",c+cls);
-		}else{
-			if(this.className.indexOf(cls)<0){this.className = this.className+" "+cls;}	
-		}
+		}else
+			if(this.className.indexOf(cls)<0){this.className += " "+cls;console.log(this.className);}	
 		return this;
 	},
 	
@@ -981,22 +967,34 @@ var __element = {
 		return this;
 	},
 
-	// attach : function(type, func){
-	// 	if($.isString(type)){
-	// 		this.addEventListener(type.replace(/^on/,''),func,false);	
-	// 	}else if($.isObject(type)){
-	// 		for(var k in type){
-	// 			this.attach(k, type[k]);
-	// 		}
-	// 	}
-	// 	return this;
-	// },
+	attach : function(type, func){
+		if($.isString(type)){
+			this.addEventListener(type.replace(/^on/,''),func,false);	
+		}else if($.isObject(type)){
+			for(var k in type){
+				this.attach(k, type[k]);
+			}
+		}
+		return this;
+	},
 
-	// handle : function(e){
-	// 	e = e||window.event;
-	// 	var type = e.type;
-	// 	this["on"+e.type].apply(this,arguments);
-	// },
+	handle : function(e){
+		e = e||window.event;
+		var type = e.type,
+			idx = this.attr('__idx__')+"",
+			isTap = ('tap'===this.attr('__eventName'));
+			var handlers = $.__rfuncs[idx]?$.__rfuncs[idx][type]:null;
+			//console.log(handlers);
+			if(handlers){
+				//handlers = JSON.parse(handlers);
+				for(var i=handlers.length-1;i>=0;i--){
+					//var o = eval("("+handlers[i]+")");
+					var o = handlers[i];
+					if($.isFunc(o.func)) o.func.apply(this, [e].concat(o.args));
+				}
+			}	
+		// }
+	},
 
 	find : function(q,f){var qs=q.split(" "),qu=qs[qs.length-1];var r=this.querySelectorAll(q);
 		if($.isFunc(f)) for(var i=0,el;el=r[i];i++) f(el,i);
@@ -1007,19 +1005,29 @@ var __element = {
 
 	bind : function(arg1, arg2){
 		if(typeof(arg1)=="string"){
+			//if(arg1=="click"&&$browser.device=="smartphone")arg1=this.getAttribute("touch")||"touchstart";		
 			if(arg2){
 				arg1 = arg1.replace(/^on/,'');
-				if(!$browser.mobile && arg1.indexOf("touch")==0) 
-					arg1 = {"touchstart":"click","touchmove":"mousemove","touchend":"mouseup"}[arg1];
-				if($browser.mobile && arg1=='click'){
-					var el = this;var handler = arg2;
-					this.addEventListener('touchend', function(e){
-						var x = e.changedTouches[0].screenX,y = e.changedTouches[0].screenY;
-						if(Math.abs(x-TSX)>12||Math.abs(y-TSY)>12)return;
-						handler.apply(el,e);
-					}, false);
-				}else
-					this.addEventListener(arg1, arg2, false);
+				if(arg1=="touchstart" && !$browser.mobile)
+					arg1 = "click";
+				var i = this.getAttribute("__idx__")+"";
+				if(!$.__rfuncs[i])
+					$.__rfuncs[i] = [];
+				var curr = $.__rfuncs[i][arg1]||[];
+				var fo = {
+					func : arg2,
+					args : Array.prototype.slice.call(arguments).slice(2)
+				};
+				curr.push(fo);
+				$.__rfuncs[i][arg1] = curr;
+				var smTouch = ((arg1=="tap"||arg1=="touch")&& $browser.mobile && !$browser.simulator);
+				
+				var es = smTouch?["touchstart","touchend"]:[arg1];
+				
+				if(smTouch) this.attr('__eventName','tap');
+				for(var i=0;i<es.length;i++){
+					this.addEventListener(es[i],this.handle,false); //NO IE8 support any longer	
+				}
 			}
 		}else if(typeof(arg1)=="object" && !arg2){
 			for(var f in arg1){
@@ -1029,41 +1037,20 @@ var __element = {
 		return this;
 	},
 
-	unbind : function(){
-		console.log("ERR : unbind is removed, since it will lead a performance problem. use lock,unlock instead.")
-	},
-
-	/**
-	 * be careful this will unbind all
-	 * @return {[type]} [description]
-	 */
-	lock : function(){
-		var mirror=this.clone(false).attr("__clone","true");
-		this.hide().attr("__lock","true");
-		return mirror;
-	},
-	unlock : function(){
-		var org = this.nextSibling;
-		if(this.attr("__clone") && org&&org.attr("__lock","true")){
-			this.remove();
-			org.show().removeAttribute("__lock");
-		}
-		return org;
+	unbind : function(evname){
+		// this.attr("__on"+evname,false);
+		//this.removeAttribute("__on"+evname);
+		var i = this.getAttribute('__idx__');
+		if($.__rfuncs[i]) delete $.__rfuncs[i];
+		return this;
 	},
 
 	/**
 	 * clone a element including childs and append to target.
-	 * @param  replace:optional, insert the new clone obj before current one.and distory current one.
+	 * @param  target:optional, target to append to 
 	 * @return cloned DOMElement.
 	 */
-	clone : function(replace){
-		var c=this.cloneNode(true);
-		if(replace && this.parentNode){
-			this.parentNode.insertBefore(c, this);
-			this.remove();
-		}
-		return c;
-	},
+	clone : function(target){var c=this.cloneNode(true);if(target)target.appendChild(c);return c;},
 	
 	rect : function(){
 		var scrollTop = (document.documentElement && document.documentElement.scrollTop) || document.body.scrollTop,
@@ -1269,6 +1256,7 @@ $.extend(Element.prototype,__element);
 var $e = function(type, args, target, namespace){
 	type = namespace? type.replace(/_/g, "-"):type;
 	var _el = namespace? document.createElementNS(namespace,type):document.createElement(type);
+	_el.setAttribute("__idx__",$.__rid++);
 	if(target && typeof(target)=="string")
 		target = $id(target);
 	if(args){
@@ -1476,9 +1464,8 @@ var $select = function(values,attrs,target){
  * */
 var $styles=function(rules,target,id){
 	target = target||document.body;
-	var opt = {type:"text/css"};
-	if(id)opt.id = id;
-	var cs = $e('style',opt,target);
+	var sid = id?id: "runtime_rule_"+(++$.__rid),
+		cs = $e('style',{type:"text/css",id:sid},target);
 	var tn = document.createTextNode("");
 	if(typeof(rules)=="string"){
 		tn.appendData(rules);
@@ -1586,8 +1573,7 @@ var $http = {
   		}
   		method =method.toUpperCase();  
   		xhr.open(method,url,true);
-  		if(!$browser.mobile)
-  			console.log(url,method);
+  		console.log(url,method);
   		if(method == 'POST' || method == 'PUT' || method == 'DELETE'){
   			xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
   			xhr.send(userdata);
