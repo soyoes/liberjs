@@ -443,15 +443,11 @@ var $app = {
 	start : function(start_view){
 		if($app.status=="stopped")
 			throw new Error("This app has been stopped for some reason.");
-		
-		if($browser.mobile){
-			document.body.addEventListener("touchstart",function(e){
-       			window.TSX = e.changedTouches[0].screenX;
-        		window.TSY = e.changedTouches[0].screenY;
-		    });	
-		}
-
-		$app.start_view = $.isString(start_view)?start_view:$conf.default_view;
+		var ps = window.location.href.split("#");
+		if(ps[1] && window[ps[1]])
+			$app.start_view = ps[1];
+		else
+			$app.start_view = $.isString(start_view)?start_view:$conf.default_view;
 		if(!$app.start_view){
 			if($app.onError)$app.onError("no_start_view_error");
 			throw new Error("No start view"); return;
