@@ -43,10 +43,12 @@
  */
 var $form_view ={
 
-	drawForm : function(target){
+	drawForm : function(target,udata){
 		var form = $form({},target);
 		var list = $ul({},form);
-		var userdata = $this.formData||{};
+		var userdata = udata||$this.formData||{};
+		if($this.formMethod)form.method = $this.formMethod;
+		if($this.formURL)form.action = $this.formURL;
 
 		for(var i=0,o;o=$this.formItems[i];i++){
 			
@@ -70,16 +72,16 @@ var $form_view ={
 			if(o.type==="html"){
 				cell.innerHTML = o.html;
 			}else if(o.type=="textarea"){
-				$textarea($.extend({name:name,value:val},o), cell);
+				$textarea($.extend({name:name,value:val,class:'form-item'},o), cell);
 			}else if(["text","password","hidden"].indexOf(o.type)>=0){
-				console.log($.extend({name:name,value:val},o));
-				$input($.extend({name:name,value:val},o), cell);
+				//console.log($.extend({name:name,value:val},o));
+				$input($.extend({name:name,value:val,class:'form-item'},o), cell);
 				if(o.type=="hidden")
 					row.style.display="none";
 			}else{//checkbox|radio|select|textarea|  customTags : mytags,myradios...
 				var func = window["$"+o.type];
 				if($.isFunc(func))
-					func(o.options, $.extend({name:name,value:val},o), cell);
+					func(o.options, $.extend({name:name,value:val,class:'form-item'},o), cell);
 			}
 
 			var errors = $i({name:"error-"+name},row).css({opacity:0});
@@ -97,8 +99,11 @@ var $form_view ={
 		//serialize form
 		var params = {};
 		var errors = 0;
-		for(var i=0,o;o=$this.formItems[i];i++){
+		var fItems = $this.__formItems?$this.formItems.slice().concat($this.__formItems):$this.formItems;
+
+		for(var i=0,o;o=fItems[i++];){
 			// if(name=="html")continue;
+			console.log(o);
 			var name = o.name,
 				v = $this.form[name]||false;
 			if(o.type=="checkbox"){
@@ -106,7 +111,6 @@ var $form_view ={
 				$this.form.find("input[name='"+name+"']:checked",function(el){v.push(el.value)});
 			}else
 				v = v?v.value:false;
-			console.log(o.type, v);
 			if(o.validate){
 				var mx,mn;
 				if(o.validate.startsWith("len")){
@@ -120,7 +124,6 @@ var $form_view ={
 						wrong = !v.validate(o.validate);
 					else if(mn||mx)
 						wrong = (mn>=0 && v.length<mn) || mx&&v.length>mx;
-					console.log(name,wrong,v,mn,mx);
 					if(wrong){
 						errors++;
 						//FIXME!!!!
@@ -138,6 +141,9 @@ var $form_view ={
 			}
 			if(v) params[name]=v;
 		}
+
+		console.log(params);
+
 		if(!errors){
 			var method = ($this.formMethod||"post").toLowerCase();
 			$http[method]($this.formURL, params, $this.onFormSubmited ,"json");	
@@ -155,7 +161,21 @@ var $form_view ={
 			}else
 				$this.form[name].value = "";
 		}
+		//clear values that added programmingly
+		$this.form.find('.form-item[type=hidden]',function(el){el.value="";});
 	},
 
+	setFormItem : function(k,v){
+		var o = $this.form.find1st('.form-item[name='+k+']');
+		if(o){
+			if(v)o.value = v;
+			else o.value = "";	
+		}else{
+			if(!$this.__formItems)
+				$this.__formItems = [];
+			$input({type:'hidden', name:k, value:v, class:'form-item'}, $this.form);
+			$this.__formItems.push({type:'hidden', name:k, value:v});
+		}
+	}
 
 }

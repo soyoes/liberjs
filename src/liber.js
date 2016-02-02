@@ -673,10 +673,12 @@ var $controller = {
 			width: "100%",height: "100%",zIndex:100+idx,position: "fixed",
 			top:'0px',left:'0px',right:'0px',bottom:'0px',margin:'0px',border:'0px',padding:'0px',textAlign:"center"
 		});
-
 		if(!view.noHeader){
 			view.header = $header({},layer);
-			view.header = view.drawHeader? view.drawHeader.call(view,view.header,layer):($app.drawHeader? $app.drawHeader(view.header):view.header);
+			if(view.drawHeader) 
+				view.drawHeader.call(view,view.header,layer);
+			else if($app.drawHeader)
+				$app.drawHeader(view.header);
 		}
 
 		var c = $section({},layer);
@@ -691,7 +693,10 @@ var $controller = {
 		}
 		if(!view.noFooter){
 			view.footer = $footer({},layer);
-			view.footer =  view.drawFooter? view.drawFooter.call(view,view.footer,layer):($app.drawFooter? $app.drawFooter(view.footer):view.footer);
+			if(view.drawFooter) 
+				view.drawFooter.call(view,view.footer,layer);
+			else if($app.drawFooter)
+				$app.drawFooter(view.footer);
 		}
 	},
 
