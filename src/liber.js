@@ -236,6 +236,18 @@ $.clone = function(o){
 		return o.slice(0);
 	return o;
 }
+
+//link css files
+$.link = function(filepath){
+	if(!filepath)return;
+	var id = filepath.replace(/[\/\.]/g,'_');
+	if($("link#"+id).length>0)return;
+	var link = document.createElement( "link" )
+		.attr({id:id, href:filepath, type:"text/css", rel:"stylesheet"});
+	document.getElementsByTagName( "head" )[0].appendChild(link);
+}
+
+//include js files
 $.include = function(src, callback,params){
 	if(src.indexOf(".js")<0)
 		src+=".js";
@@ -245,10 +257,7 @@ $.include = function(src, callback,params){
 	jsId = jsId[jsId.length-1].replace(/\./g,"_");
 	var time = new Date().getTime();
 	if(!$id(jsId,true)){
-		var cb = callback;
-		var cbprm = params;
 		var included = function(e){
-			
 			if(!$app.__included)
 				$app.__included = [];
 			e=e||window.event;
@@ -262,7 +271,8 @@ $.include = function(src, callback,params){
 			}
 			t.onload = t.onreadystatechange = null;
 			$app.__included.push(t.id);
-			if(cb)cb(cbprm);
+			var cb = callback?($.isString(callback)?window[callback]:callback):null;
+			if(cb)cb(params);
 		};
 		
 		var se = document.createElement("script");
