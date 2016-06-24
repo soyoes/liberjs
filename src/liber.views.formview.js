@@ -3,7 +3,7 @@
  * 
  * delegate attributes
  * 	$this.formItems{
- * 		type : text|password|radio|checkbox|select|textarea|html|hidden
+ * 		type : text|password|radio|checkbox|select|textarea|html|hidden|image
  * 		name : 
  * 		validate : email|zipcode_jp|phone_jp|url|len:N
  * 		options : [{},{}]
@@ -78,6 +78,18 @@ var $form_view ={
 				$input($.extend({name:name,value:val,class:'form-item'},o), cell);
 				if(o.type=="hidden")
 					row.style.display="none";
+			}else if(o.type=="image"){
+				$img({src:"data:image/svg+xml;utf-8,<svg xmlns='http://www.w3.org/2000/svg'><rect/></svg>",class:"form-item",name:o.name},cell)
+				.bind("click",function(e){
+					var im = this;
+					$.uploadWindow(function(r){
+						var reader = new FileReader();
+			            reader.onload = function (e2) {
+			            	im.src = e2.target.result;
+			            };
+			            reader.readAsDataURL(this.files[0]);
+					});
+				});
 			}else{//checkbox|radio|select|textarea|  customTags : mytags,myradios...
 				var func = window["$"+o.type];
 				if($.isFunc(func))
@@ -88,6 +100,7 @@ var $form_view ={
 		}
 
 		$this.form = form;
+		return form;
 	},
 
 	submitForm : function(){
@@ -109,6 +122,9 @@ var $form_view ={
 			if(o.type=="checkbox"){
 				v = [];
 				$this.form.find("input[name='"+name+"']:checked",function(el){v.push(el.value)});
+			}else if(o.type=="image"){
+				var imo = $this.form.find1st("img[name='"+name+"']");
+				v = imo.src?imo.src.escape():"";
 			}else
 				v = v?v.value:false;
 			if(o.validate){
