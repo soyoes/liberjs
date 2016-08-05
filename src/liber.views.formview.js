@@ -92,8 +92,20 @@ var $form_view ={
 				});
 			}else{//checkbox|radio|select|textarea|  customTags : mytags,myradios...
 				var func = window["$"+o.type];
-				if($.isFunc(func))
-					func(o.options, $.extend({name:name,value:val,class:'form-item'},o), cell);
+				var args = $.extend({name:name,value:val,class:'form-item'},o);
+				if($.isFunc(func)){
+					var el = func(o.options, args, cell);
+					if(o.type=='checkbox'||o.type=='radio'){
+						cell.find('label',function(el1,i){
+							el1.bind("click",function(e){
+								this.parentNode.find("label",function(el2,i){
+									var sel = el2.childNodes[1];
+									el2.className=sel.checked?"on":"";
+								});
+							});
+						});
+					}
+				}
 			}
 
 			var errors = $i({name:"error-"+name},row).css({opacity:0});
@@ -161,10 +173,12 @@ var $form_view ={
 		console.log(params);
 
 		if(!errors){
-			var method = ($this.formMethod||"post").toLowerCase();
-			$http[method]($this.formURL, params, $this.onFormSubmited ,"json");	
+			if($this.onFormSubmit) $this.onFormSubmit(params);
+			if($this.formURL && $this.formURL.validate('url') ){
+			    var method = ($this.formMethod||"post").toLowerCase();
+			    $http[method]($this.formURL, params, $this.onFormSubmited ,"json");
+			}
 		}
-		
 	},
 
 	resetForm : function(){

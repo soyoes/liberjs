@@ -381,7 +381,7 @@ $.screenHeight = function(){
 $.rect = function(el){
 	return el&&el.rect?el.rect():{left:0,top:0,width:0,height:0};
 }
-$.remvoe = function(el){
+$.remove = function(el){
 	if(el&&el.remove)el.remove();
 }
 $.show = function(el){
@@ -472,24 +472,28 @@ var $app = {
 
 		$app.legacy = $conf.modules.indexOf("liber.legacy")>=0;
 
-		//init history handler
-		window.onhashchange = function (e) {
-			var hash = window.location.hash;;
-			// console.log("History:",hash);
-			if(hash.startsWith("#")){
-				hash = hash.replace(/^#/,"");
-				if(hash.match(/^~/)){
-					var func = hash.replace(/^~/,"");
-					try{eval(func+"()");}catch(ex){
-						if($app.onError) $app.onError("wrong_func_url_error");
-					}	
-				}else{
-					var vname = hash.split("?")[0];
-					if(window[vname] && window[vname].drawContent)
-						$app.openView(hash);
+		$app.hash = window.location.hash;
+  		setInterval(function () {
+		    if (window.location.hash != $app.hash) {
+		        $app.hash = window.location.hash;
+		        //console.log("History:",$app.hash);
+		        var hash = $app.hash;
+		        if(hash=="")hash="#"+$app.start_view;
+		        if(hash.startsWith("#")){
+					hash = hash.replace(/^#/,"");
+					if(hash.match(/^~/)){
+						var func = hash.replace(/^~/,"");
+						try{eval(func+"()");}catch(ex){
+							if($app.onError) $app.onError("wrong_func_url_error");
+						}
+					}else{
+						var vname = hash.split("?")[0];
+						if(window[vname] && window[vname].drawContent)
+							$app.openView(hash);
+					}
 				}
-			}
-		};
+		    }
+		}, 100);
 
 		//preload
 		var images = $conf.preload_images?$conf.preload_images:[];
@@ -929,7 +933,7 @@ var __element = {
 	hasClass : function(cls){
 		var iS = this.isSvg();
 		var cn = iS?this.getAttribute("class"):this.className;
-		return cn&&new RegExp("\\b"+cls+"\\b","g").test(cn);
+		return cn&&cn.match(new RegExp("\\b"+cls+"\\b","g"));
 	},
 	
 	css : function(arg1,arg2){
@@ -983,8 +987,8 @@ var __element = {
 						this.setAttribute(arg1,arg2);	
 				}
 			}else{
-				//return this[arg1]?this[arg1]:this.getAttribute(arg1);
-				return this.getAttribute(arg1);
+				var v = this.getAttribute(arg1);
+				return v && v.match(/^\d+$/)?parseInt(v):v;
 			}
 		}else if(typeof(arg1)=="object" && !arg2){
 			for(var _f in arg1){
@@ -1196,8 +1200,6 @@ var __element = {
 				clearInterval(interv);
 			}
 		}, opts.interval);
-		
-		
 		return this;
 	},
 	hover : function(over,out){
@@ -1420,11 +1422,9 @@ var $sel = function(options,attrs,target){
 			lb.attr({html:o.label}).css({position:"relative","padding-left":"20px","text-align":"left"});
 			$input({type:attrs.type, name:attrs.name, value:o.value, checked:values.indexOf(o.value)>=0?true:false},lb)
 				.css({display:"block",position:"absolute",left:0,top:"50%",transform:"translateY(-50%)"});
-			if(onclick) dd.bind("click",onclick);
+			if(onclick) lb.bind("click",onclick);
 		}
-			
 	}
-
 };
 
 var $radio = function(options,attrs,target){
