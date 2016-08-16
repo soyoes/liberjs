@@ -61,8 +61,7 @@ var $browser = (function(){
 })();
 
 function $id(domid){
-	var usingView = ($app.status === "loaded" && $this && $this.layer);
-	return (usingView) ? $this.layer.find("#"+domid):document.getElementById(domid);
+	return document.getElementById(domid);
 }
 /* shot cuts */
 // if(!$) //to support jquery
@@ -143,6 +142,10 @@ $.trim=function(arr,func){
 			a.push(v);
 	}return a;
 };
+$.empty =function(obj){
+	return (!obj)||($.isArray(obj)&&obj.length<=0)||
+		($.isObject(obj)&&Object.keys(obj).length<=0);
+}
 //get min, max value
 $.range = function(arr,col){
 	if(!arr)return false;
@@ -195,8 +198,8 @@ $.unserialize = function(paramStr,rowSpliter,kvSpliter){
 	paramStr = paramStr.replace(/(.*)\?/i,'');
 	var parts = paramStr.split(rowSpliter);
 	var params = {};
-	for(var i in parts){
-		 var ps = parts[i].split(kvSpliter);
+	for(var i=0,p;p=parts[i];i++){
+		 var ps = p.split(kvSpliter);
 		 if(ps.length==2)
 		    params[ps[0].trim()] = ps[1];
 	}
@@ -282,13 +285,8 @@ $.include = function(src, callback,params){
 		se.onload = se.onreadystatechange = included;
 		se.onerror = included;
 		var head = document.head?document.head: document.getElementsByTagName('head')[0];
-		if(document.head){
-			head.appendChild(se);
-			se.src = src.indexOf("liber.")>=0 ? src+"?v="+time:src;
-		}else{
-			se.src = src.indexOf("liber.")>=0 ? src+"?v="+time:src;
-			head.appendChild(se);
-		}
+		se.src = src.indexOf("liber.")>=0 ? src+"?v="+time:src;
+		head.appendChild(se);
 	}else{
 		//$.package(jsId);
 		if(callback){
@@ -508,8 +506,8 @@ var $app = {
 			if(progress>=100)
 				$app.preloaded();
 		}; 
-		for(var i in $conf.modules)
-			$.include($conf.modules[i], step, $conf.modules[i]);
+		for(var i=0,m;m=$conf.modules[i];i++)
+			$.include(m, step, m);
 		if(images.length>0)
 			$.preload(images, step, step);
 	},
@@ -543,7 +541,7 @@ var $app = {
 	},
 	trans : function(e){
 		var url = this.getAttribute("url");
-		if(url && $.isString(url)){
+		if(url && $.isString(url) && url.trim().length>0){
 			if(url.match(/@\?*/)) //is popup
 				$app.openView(url.replace('@?','?'), true);
 			else {
@@ -676,38 +674,38 @@ var $controller = {
 		else this.loaded();
 	},
 	drawView : function(idx){
-		// console.log("controller::drawView");
 		var view = this;
+		if(view.layer)view.layer.remove();
 		var layer = $article({idx:idx,"class":view.isPopup?"view popup "+view.name:"view "+view.name,view:view.name},document.body);
-		//FIXME
-		layer.css({
+		view.layer = layer.css({
 			width: "100%",height: "100%",zIndex:100+idx,position: "fixed",
 			top:'0px',left:'0px',right:'0px',bottom:'0px',margin:'0px',border:'0px',padding:'0px',textAlign:"center"
 		});
+
+		view.header = view.noHeader?$header({}):$header({},layer);
+		view.content = $section({},layer);
+		view.footer = view.noFooter?$footer({}):$footer({},layer);
+		if($app.legacy)
+			view.wrapper=view.content;
+
 		if(!view.noHeader){
-			view.header = $header({},layer);
+			if($app.drawHeader)
+				$app.drawHeader(view.header,layer);
 			if(view.drawHeader) 
 				view.drawHeader.call(view,view.header,layer);
-			else if($app.drawHeader)
-				$app.drawHeader(view.header);
 		}
 
-		var c = $section({},layer);
-		if(view.drawContent){
-			if(view.layer)
-				view.layer.remove();
-			view.layer = layer;
-			view.content = c;
-			if($app.legacy)
-				view.wrapper=c;
-			view.drawContent.call(view, c, layer);
-		}
+		if($app.drawContent)
+			$app.drawContent(view.content, layer);
+
+		if(view.drawContent)
+			view.drawContent.call(view, view.content, layer);
+
 		if(!view.noFooter){
-			view.footer = $footer({},layer);
+			if($app.drawFooter)
+				$app.drawFooter(view.footer,layer);
 			if(view.drawFooter) 
 				view.drawFooter.call(view,view.footer,layer);
-			else if($app.drawFooter)
-				$app.drawFooter(view.footer);
 		}
 	},
 
@@ -799,6 +797,9 @@ String.prototype.validate = function(type){
 	return true;
 };
 
+Array.prototype.last = function(){
+    return this.length>1?this[this.length - 1]:null;
+};
 
 NodeList.prototype.each = function(func){
 	if(func) for(var i=0;i<this.length;i++)
@@ -922,7 +923,7 @@ var __element = {
 		cls = cls.trim();
 		var iS = this.isSvg();
 		var cn = iS?this.getAttribute("class"):this.className;
-		cn = cn.replace(new RegExp("\\b"+cls+"\\b","g"),"").replace(/\s+/g," ");
+		cn = cn.replace(new RegExp("\\b"+cls+"\\b","g"),"").replace(/\s+/g," ").trim();
 		if(iS)
 			this.setAttribute('class',cn);
 		else 
@@ -976,7 +977,7 @@ var __element = {
 			if(arg1=="url" && typeof(arg2)=="string")
 				this.bind("click", $app.trans);
 			
-			if(arg2!=undefined){
+			if(arg2!=undefined){//set
 				if(this.tagName.toUpperCase() == "IMG" && arg1.toLowerCase()=="src"){
 					this[arg1] = $conf.image_path && arg2.indexOf("data:image")<0 && arg2.indexOf("http")!=0? $conf.image_path+arg2:arg2;
 				}else{
@@ -986,7 +987,7 @@ var __element = {
 					if(arg1!="innerHTML"&&arg1!="className"&&arg1!="src") //FIXME check if element has this property
 						this.setAttribute(arg1,arg2);	
 				}
-			}else{
+			}else{//get
 				var v = this.getAttribute(arg1);
 				return v && v.match(/^\d+$/)?parseInt(v):v;
 			}
@@ -1449,7 +1450,8 @@ var $select = function(values,attrs,target){
 		sele = $e("select",attrs,target);
 	}
 	if($.isArray(values)){
-		for(var i in values)$e("option",{value:values[i],html:values[i]}, sele);
+		for(var i=0,v;v=values[i];i++) 
+			$e("option",{value:v,html:v}, sele);
 	}else{
 		for(var v in values)$e("option",{value:v,html:values[v]}, sele);
 	}
@@ -1485,6 +1487,7 @@ var $styles=function(rules,target,id){
 	}else{
 		for(var k in rules){
 			var v = typeof(rules[k])=="string"?rules[k] : $.serialize(rules[k], ";", ":");
+			if($.isFunc(v))continue;
 			tn.appendData([k, "{", v, "}\n"].join(""));
 		}
 	}
