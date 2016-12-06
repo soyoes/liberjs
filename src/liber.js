@@ -76,6 +76,7 @@ var $ = function(query,each){
 	return res;
 }
 
+var TSX=0,TSY=0;
 $.args=null,
 $.__events = {
 	'HTMLEvents': /^(?:load|unload|abort|error|select|change|submit|reset|focus|blur|resize|scroll)$/,
@@ -104,11 +105,13 @@ var $this;//current view.
 
 
 $.isArray = function(v){
-	return Object.prototype.toString.call(v) === '[object Array]';
+	return v && Object.prototype.toString.call(v) === '[object Array]';
 }
 $.isFunc = function(f) {
-	var getType = {};
-	return f && getType.toString.call(f) === '[object Function]';
+	return f && Object.prototype.toString.call(f) === '[object Function]';
+}
+$.isFile = function(v){
+	return Object.prototype.toString.call(v) === '[object File]';
 }
 $.isBool = function(va){
 	return va===true || va===false;
@@ -266,7 +269,6 @@ $.include = function(src, callback,params){
 				$app.__included = [];
 			e=e||window.event;
 			var t=e.target||e.srcElement;
-			
 			if(t.readyState == "loading")
 				return;
 			if(e.type=="error"){
@@ -380,7 +382,10 @@ $.rect = function(el){
 	return el&&el.rect?el.rect():{left:0,top:0,width:0,height:0};
 }
 $.remove = function(el){
-	if(el&&el.remove)el.remove();
+	if(el&&!$.isString(el)&&el.remove)return el.remove();
+	if($.isString(el)&&el.startsWith("#")){
+		$.remove($id(el.replace("#","")));
+	}
 }
 $.show = function(el){
 	if(el&&el.show)el.show(); return el;
@@ -391,7 +396,27 @@ $.hide = function(el){
 $.fire = function(el){
 	if(el&&el.fire)el.fire(); return el;
 }
-	
+
+/**
+ * timestamp to date string
+ * @param  {long} time : timestamp, 14bit
+ * @param  {string} locale : en-GB, en-US, ja-JP, zh-CN, ko-KR ...
+ * @return {string} : the date time string
+ */
+$.time2str = function(time, locale){
+	var str = time+"";
+	if(str.length==11)time*=1000;
+	str =  new Date(time).toLocaleDateString(locale);
+	if(locale.match(/^(zh|ja)/)){
+		var ps = str.split("/");
+		for(var i=0,p;p=ps[i];i++){
+			if(p.length==1)ps[i]="0"+p;
+		}
+		return ps.join("-");
+	}else
+		return str;
+}
+
 /**
 * return mouse position;
 */
@@ -449,6 +474,7 @@ var $app = {
 	viewIdx : 1,
 	views : [],
 	legacy : false, //check if its liber.js 1.x
+	hashData : {},//data for view transition
 	start : function(start_view){
 		if($app.status=="stopped")
 			throw new Error("This app has been stopped for some reason.");
@@ -469,29 +495,6 @@ var $app = {
 			if(!$conf[i])$conf[i]=__default[i];
 
 		$app.legacy = $conf.modules.indexOf("liber.legacy")>=0;
-
-		$app.hash = window.location.hash;
-  		setInterval(function () {
-		    if (window.location.hash != $app.hash) {
-		        $app.hash = window.location.hash;
-		        //console.log("History:",$app.hash);
-		        var hash = $app.hash;
-		        if(hash=="")hash="#"+$app.start_view;
-		        if(hash.startsWith("#")){
-					hash = hash.replace(/^#/,"");
-					if(hash.match(/^~/)){
-						var func = hash.replace(/^~/,"");
-						try{eval(func+"()");}catch(ex){
-							if($app.onError) $app.onError("wrong_func_url_error");
-						}
-					}else{
-						var vname = hash.split("?")[0];
-						if(window[vname] && window[vname].drawContent)
-							$app.openView(hash);
-					}
-				}
-		    }
-		}, 100);
 
 		//preload
 		var images = $conf.preload_images?$conf.preload_images:[];
@@ -522,8 +525,9 @@ var $app = {
 	},
 	loaded : function(){
 		$app.status = "loaded";
-		// console.log("loaded:",$app.start_view);
-		$app.openView($app.start_view);
+		$app.hash = window.location.hash;
+		$app.openView($app.start_view,{},true);
+		setInterval($app.onUrlChanged, 50);
 	},
 	handle : function(type, view, data){
 		switch(type){
@@ -541,72 +545,154 @@ var $app = {
 	},
 	trans : function(e){
 		var url = this.getAttribute("url");
-		if(url && $.isString(url) && url.trim().length>0){
-			if(url.match(/@\?*/)) //is popup
-				$app.openView(url.replace('@?','?'), true);
-			else {
-				var isSM = $browser.mobile && !$browser.simulator;
-				var evName = isSM?"touchstart":"click";
-				//FIXME!!!:: check if this element has touchstart event.
-				if(this.tagName!="A")
-					$a({href:"#"+url, html:"_"},document.body).css({opacity:0}).fire(evName);
-				else
-					this.fire(evName);	
-			}
-			e = e||window.event;
-			e.stopPropagation();
-		}
+		e = e||window.event;
+		e.stopPropagation();
+		$app.openUrl(url);
 	},
-	openView : function(url, popup){
-		// console.log("openview",url);
-		if(url && $.isString(url)){
+	onUrlChanged : function(argument) {
+		if (window.location.hash != $app.hash) {
+	        var hash = window.location.hash;
+	        if(hash=="") hash="#"+$app.start_view;
+	        if(hash.startsWith("#")){
+				hash = hash.replace(/^#/,"");
+				if(hash.match(/^~/)){
+					var func = hash.replace(/^~/,"");
+					try{eval(func+"()");}catch(ex){
+						if($app.onError) $app.onError("wrong_func_url_error");
+					}
+				}else{
+					var vname = hash.split("?")[0];
+					var data = $app.hashData[vname] || {};
+					if(window[vname] && window[vname].drawContent)
+						$app.openView(hash,data,true);
+				}
+			}
+			$app.hash = window.location.hash;
+	    }
+	},
+	openUrl : function(url) {
+		if(url && $.isString(url) && url.trim().length>0){
 			if(url.indexOf("http:")==0 || url.indexOf("https:")==0){
 				return location.href = url;
 			}else{//init view 
-				var params = $.unserialize(url),
-					vname = url.split("?")[0],
-					opener = $this;
-				if(vname.endsWith("@")) {
-					popup = true;
-					vname = vname.substring(0,vname.length-1);
-				}
-				var view = window[vname];
-				if(!view){
-					if($app.onError)$app.onError("view_not_exists_error", {name:vname});
-					throw new Error("Error :no view("+vname+") to enhance");
-				}
-				if(!view.close || !view.loaded){
-					view.name = view.name|| vname;
-					$.extend(view, $controller);
-					// console.log("extend:",view.extend,window[view.extend]);
-					if($.isString(view.extend) && $.isObject(window[view.extend])){
-						console.log("extending:",view.extend);
-						$.extend(view, window[view.extend]);
-					}
-						
-				}
-
-				view.params = params;
-				if(opener)
-					view.opener = opener;
-				if(opener && opener.onInactive) 
-					opener.onInactive.call(opener,view);
-				if(popup)
-					view.isPopup = true;
-				
-				$app.views.push(vname);	
-				
-				$this = view;
-
-				if(view.onload)view.onLoad = view.onload;
-				if(view.onLoad)
-					view.onLoad.call(view,params);
-				else
-					view.loaded();//$controller.loaded
+				$app.openView(url,{},url.match(/@\?*/));
 			}
 		}else{
 			if($app.onError)$app.onError("unsupported_url_type_error",{url:url});
-			throw new Error("ERROR : $app.openView requires string type url");			
+			throw new Error("ERROR : $app.openView requires string type url");
+		}
+	},
+	/**
+	 * view transition logics
+	 *
+	 * #init
+	 * start $app.onUrlChanged to listen URL hash change info.
+	 *
+	 * #manually open view
+	 * A : if transition
+	 * 	1 : create dummy <A> with url
+	 * 	2 : fire click event against this <A>
+	 * 	3 : url will be changed (by browser)
+	 * 	4 : $app.onUrlChanged will do the rest things
+	 *
+	 * B : no transition 
+	 *  1 : solve view name, params, opener
+	 *  2 : handle onInactive of opener
+	 *  3 : extend target view controller, if its not inited
+	 *  4 : target view.onLoad
+	 *  5 : target.loaded
+	 *  6 : target.drawHeader
+	 *  7 : target.drawContent
+	 *  8 : target.drawFooter
+	 * 
+	 * @param  {[type]} !withoutTransition [whether appends anchor url (#name_of_the_view) to current one]
+	 */
+	openView : function(url, args, withoutTransition){
+		if(!withoutTransition){
+			var canTrans = ($this && $this.onTransition)?$this.onTransition.call($this,url,args,false):true;
+			if(canTrans===false)return;
+			//view transition : let $app.onUrlChanged to do the openView job
+			var isSM = $browser.mobile && !$browser.simulator;
+			//var evName = isSM?"touchend":"click";
+			var evName = "click";
+			var vname = url.replace(/^#/,'');
+			vname = vname.split("?")[0];
+			$app.hashData[vname] = args||{};
+			var dm = $a({href:"#"+url, html:"_"},document.body).css({opacity:0}).fire(evName);
+			setTimeout(function(){dm.remove();},10);
+			return;
+		}
+		var params = $.extend(args||{} , $.unserialize(url)||{}),
+			vname = url.split("?")[0],
+			opener = $this;
+		if(vname.endsWith("@")) {
+			withoutTransition = true;
+			vname = vname.substring(0,vname.length-1);
+		}
+		var view = window[vname];
+		if(!view){
+			if($app.onError)$app.onError("view_not_exists_error", {name:vname});
+			throw new Error("Error :no view("+vname+") to enhance");
+		}
+		if(!view.close || !view.loaded){
+			view.name = view.name|| vname;
+			$.extend(view, $controller);
+			// console.log("extend:",view.extend,window[view.extend]);
+			if($.isString(view.extend) && $.isObject(window[view.extend])){
+				console.log("extending:",view.extend);
+				$.extend(view, window[view.extend]);
+			}
+		}
+
+		view.params = params;
+		if(opener)
+			view.opener = opener;
+		var oia = opener?opener.onInactive||$app.onInactive:null;
+		if(opener && oia) 
+			oia.call(opener,view);
+		// if($this.opener && url===$this.opener.name){
+		// 	console.log("this.close");
+		// 	return $this.close();
+		// }
+		if(withoutTransition)
+			view.isPopup = true;//FIXME
+		$app.views.push(vname);	
+		$this = view;
+
+		if(view.onload)view.onLoad = view.onload;
+		if(view.onLoad)
+			view.onLoad.call(view,params);
+		else
+			view.loaded.call(view);//$controller.loaded
+	},
+	/**
+	 * open a view as a subview under another view controller
+	 * @param  {[type]} view_name [description]
+	 * @param  {[type]} params    [description]
+	 * @param  {[type]} header    [description]
+	 * @param  {[type]} content   [description]
+	 * @param  {[type]} footer    [description]
+	 * @param  {[type]} layer     [description]
+	 * @return {[type]}           [description]
+	 */
+	openSubview : function(view_name, params, header, content, footer){
+		var v = window[view_name];
+		if(!v)return;
+		v.parentView = $this?$this.name:null;
+		if(!v.close || !v.loaded){
+			$.extend(v, $controller);
+			if($.isString(v.extend) && $.isObject(window[v.extend])){
+				$.extend(v, window[v.extend]);
+			}
+		}
+		if(header){header.innerHTML="";v.header=header}
+		if(content){content.innerHTML="";v.content=content;}
+		if(footer){footer.innerHTML="";v.footer=footer;}
+		$this = v;
+		if(v.onLoad) {	
+			v.onLoad.call(v, params);
+		}else{
+			v.render.call(v, header, content, footer);
 		}
 	},
 	drawView : function(view){
@@ -615,8 +701,9 @@ var $app = {
 			if(view.layer && !view.layer.parentNode)
 				document.body.appendChild(view.layer);
 			$app.bringViewToFront(view);
-			if(view.onActive) {
-				view.onActive.call(view);
+			var oa = view.onActive||$app.onActive;
+			if(oa) {
+				oa.call(view);
 				$app.last_view = null;
 			}
 		}else{
@@ -634,8 +721,9 @@ var $app = {
 		$app.views.pop();//popup itself
 		$this = view.opener || window[$app.start_view];
 		$this.layer.show();
-		if($this && $this.onActive){
-			$this.onActive.call($this,view,data);
+		var oa = $this.onActive||$app.onActive;
+		if(oa){
+			oa.call($this,view,data);
 		}
 	},
 
@@ -660,9 +748,37 @@ var $app = {
 	}
 };
 
+
+/**
+ * view controller base class
+ * 
+ * properties you should specify
+ * 	[string] name 	: the view's name
+ * 	[bool] reuable : whether a view is reusable. (won't be removed when its going to the background)
+ *
+ * DON'T use these property names under $this | your_view
+ * 	.parentView
+ * 	.opener
+ * 	.params
+ * 	.render
+ * 	
+ * 
+ * delegate methods
+ * 	- onLoad 		: a view is on initilization process
+ * 	- onActive 		: a view is going to forground
+ * 	- onInactive 	: a view is going to background
+ * 	- onTransition 	: a view is going to transit to another view
+ * 	- onClose 		: a popup view is closing itself
+ * 	- drawHeader 	: draw view's <header> tag
+ * 	- drawContent 	: draw view's body <section> tag
+ * 	- drawFooter 	: draw view's <footer> tag
+ */
 var $controller = {
 	loaded : function(){
-		$app.handle("loaded",$this);
+		if(this.parentView){
+			this.render.call(this, this.header, this.content, this.footer);
+		}else
+			$app.handle("loaded",$this);
 	},
 	close : function(data){
 		// console.log("controller::close");
@@ -671,7 +787,7 @@ var $controller = {
 	reload : function(params){
 		this.params = params || this.params;
 		if(this.onLoad)this.onLoad.call(this,this.params);
-		else this.loaded();
+		else this.loaded.call(this);
 	},
 	drawView : function(idx){
 		var view = this;
@@ -688,32 +804,89 @@ var $controller = {
 		if($app.legacy)
 			view.wrapper=view.content;
 
-		if(!view.noHeader){
-			if($app.drawHeader)
-				$app.drawHeader(view.header,layer);
-			if(view.drawHeader) 
-				view.drawHeader.call(view,view.header,layer);
-		}
-
-		if($app.drawContent)
-			$app.drawContent(view.content, layer);
-
-		if(view.drawContent)
-			view.drawContent.call(view, view.content, layer);
-
-		if(!view.noFooter){
-			if($app.drawFooter)
-				$app.drawFooter(view.footer,layer);
-			if(view.drawFooter) 
-				view.drawFooter.call(view,view.footer,layer);
-		}
+		$controller.render.call(view, view.header, view.content, view.footer, view.layer);
 	},
 
 	bringToFront : function(){
 		$app.handle("front",$this);
 	},
+
+	render : function(header, content, footer, layer){
+		if(!this.noHeader && header){
+			if($app.drawHeader)
+				$app.drawHeader(header,layer);
+			if(this.drawHeader) 
+				this.drawHeader.call(this,header,layer);
+		}
+
+		if($app.drawContent)
+			$app.drawContent(content, layer);
+
+		if(this.drawContent)
+			this.drawContent.call(this, content, layer);
+
+		if(!this.noFooter && footer){
+			if($app.drawFooter)
+				$app.drawFooter(footer,layer);
+			if(this.drawFooter) 
+				this.drawFooter.call(this,footer,layer);
+		}
+		if(this.parentView){
+			$this = window[this.parentView];
+		}
+		this.parentView=null;
+	},
+
 };
 
+
+/*
+YYYY     4-digit year             1999
+YY       2-digit year             99
+MMMM     full month name          February
+MMM      3-letter month name      Feb
+MM       2-digit month number     02
+M        month number             2
+DDDD     full weekday name        Wednesday
+DDD      3-letter weekday name    Wed
+W        1-kanji weekday name     金
+DD       2-digit day number       09
+D        day number               9
+th       day ordinal suffix       nd
+hhh      military/24-based hour   17
+hh       2-digit hour             05
+h        hour                     5
+mm       2-digit minute           07
+m        minute                   7
+ss       2-digit second           09
+s        second                   9
+ampm     "am" or "pm"             pm
+AMPM     "AM" or "PM"             PM
+
+now.format( "YYYY-MM-DD hh:mm:ss (W)" ) = 2011-10-10 23:11:34 (金)
+*/
+Date.prototype.format = function(formatString){
+	if(isNaN(this.getTime())) return "";
+    var YYYY,YY,MMMM,MMM,MM,M,DDDD,DDD,DD,D,W,hhh,hh,h,mm,m,ss,s,ampm,AMPM,dMod,th;
+    var d = this;
+    YY = ((YYYY=d.getFullYear())+"").slice(-2);
+    MM = (M=d.getMonth()+1)<10?('0'+M):M;
+    MMM = (MMMM=["January","February","March","April","May","June","July","August","September","October","November","December"][M-1]).substring(0,3);
+    DD = (D=d.getDate())<10?('0'+D):D;
+    DDD = (DDDD=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][d.getDay()]).substring(0,3);
+    W = ["日","月","火","水","木","金","土"][d.getDay()];
+    th=(D>=10&&D<=20)?'th':((dMod=D%10)==1)?'st':(dMod==2)?'nd':(dMod==3)?'rd':'th';
+    formatString = formatString.replace("YYYY",YYYY).replace("YY",YY).replace("MMMM",MMMM).replace("MMM",MMM).replace("MM",MM).replace("M",M).replace("DDDD",DDDD).replace("DDD",DDD).replace("DD",DD).replace("D",D).replace("th",th);
+
+    h=(hhh=d.getHours());
+    if (h==0) h=24;
+    if (h>12) h-=12;
+    hh = h<10?('0'+h):h;
+    AMPM=(ampm=hhh<12?'am':'pm').toUpperCase();
+    mm=(m=d.getMinutes())<10?('0'+m):m;
+    ss=(s=d.getSeconds())<10?('0'+s):s;
+    return formatString.replace("hhh",hhh).replace("hh",hh).replace("h",h).replace("mm",mm).replace("m",m).replace("ss",ss).replace("s",s).replace("ampm",ampm).replace("AMPM",AMPM);
+};
 
 String.prototype.ucfirst = function(){
 	return this.charAt(0).toUpperCase()+this.substring(1);
@@ -777,14 +950,21 @@ String.prototype.validate = function(type){
 	if(type.indexOf(":")) {
 		var parts = type.split(":");
 		type = parts[0]; val = parts[1];
+		if (parts[2]) var val2 = parts[2];
 	}
 	switch(type){
+		case "id":
+			return /^[a-z\d]{6,14}$/.test(this);
+		case "is-same":
+			return $('input[name="'+val+'"]')[0].value === $('input[name="'+val2+'"]')[0].value ? true:false;
+		case "katakana":
+			return /^[ア-ン]+\s?[ア-ン]+$/.test(this);
 		case "email":
 			return /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(.+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(this);
 		case "phone-jp":
-    		return /^[a-zA-Z0-9\-().\s]{8,15}$/.test(this);
+    		return /^\d{2,4}[\-]*\d{3,4}[\-]*\d{3,4}$/.test(this);
     	case "zipcode-jp":
-    		return /^\d{5}(-\d{4})?$/.test(this);
+    		return /^\d{3}[\-]*\d{4}$/.test(this);
     	case "url":
     		var re = new RegExp(
         	    "^((http|https|ftp)\://)*([a-zA-Z0-9\.\-]+(\:[a-zA-Z0-9\.&amp;%\$\-]+)*@)*((25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9])\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[0-9])|([a-zA-Z0-9\-]+\.)*[a-zA-Z0-9\-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(\:[0-9]+)*(/($|[a-zA-Z0-9\.\,\?\'\\\+&amp;%\$#\=~_\-]+))*$");
@@ -808,8 +988,7 @@ NodeList.prototype.each = function(func){
 };
 
 NodeList.prototype.callfunc = function(func,k,v){
-	var f = (func && (typeof func == 'string' || func instanceof String))?
-		Element.prototype[func]:false;
+	var f = $.isString(func)? Element.prototype[func]:false;
 	if(f) for (var i=0;i<this.length;i++)
 		f.call(this[i], k, v);
 	return this;
@@ -823,7 +1002,7 @@ NodeList.prototype.hide = function(k){return this.callfunc("hide");};
 NodeList.prototype.show = function(){return this.callfunc("show");};
 NodeList.prototype.addClass = function(v){return this.callfunc("addClass",v);};
 NodeList.prototype.removeClass = function(v){return this.callfunc("removeClass",v);};
-
+NodeList.prototype.forEach = Array.prototype.forEach;
 
 var $deltas = {
 	linear : function (progress) {
@@ -914,7 +1093,7 @@ var __element = {
 			c=c.length>0?c+" ":"";
 			this.setAttribute("class",c+cls);
 		}else
-			if(this.className.indexOf(cls)<0){this.className = this.className+" "+cls;}    
+			if(!this.hasClass()){this.className = this.className+" "+cls;}    
 		return this;
 	},
 	
@@ -1018,6 +1197,10 @@ var __element = {
 					arg1 = {"touchstart":"click","touchmove":"mousemove","touchend":"mouseup"}[arg1];
 				if($browser.mobile && arg1=='click'){
 					var el = this;var handler = arg2;
+					this.addEventListener('touchstart',function(e){
+						TSX = e.changedTouches[0].screenX;
+						TSY = e.changedTouches[0].screenY;
+					});
 					this.addEventListener('touchend', function(e){
 						var x = e.changedTouches[0].screenX,y = e.changedTouches[0].screenY;
 						if(Math.abs(x-TSX)>12||Math.abs(y-TSY)>12)return;
@@ -1059,6 +1242,7 @@ var __element = {
 	/**
 	 * clone a element including childs and append to target.
 	 * @param  replace:optional, insert the new clone obj before current one.and distory current one.
+	 * FIXME : IE does not support cloneNode?
 	 * @return cloned DOMElement.
 	 */
 	clone : function(replace){
@@ -1070,6 +1254,16 @@ var __element = {
 		return c;
 	},
 	
+	/**
+	 * get the child numerical index in its parent node.
+	 * @return {int} 0-N
+	 */
+	index : function(){
+		var  i= 0;
+    	while((elem=elem.previousSibling)!=null) ++i;
+    	return i;
+	},
+
 	rect : function(){
 		var scrollTop = (document.documentElement && document.documentElement.scrollTop) || document.body.scrollTop,
 			scrollLeft = (document.documentElement && document.documentElement.scrollLeft) || document.body.scrollLeft;
@@ -1127,13 +1321,12 @@ var __element = {
 		if(this.parentNode)
 			this.parentNode.removeChild(this);
 	},
-	before : function(target) {
+	left : function(target) {
 		if($.isElement(target) && target.parentNode)
 			target.parentNode.insertBefore(this,target);
-		//else TODO $app.onError
 		return this;
 	},
-	after : function(target) {
+	right : function(target) {
 		if($.isElement(target) && target.parentNode)
 			if(target.nextSibling)
 				target.parentNode.insertBefore(this, target.nextSibling);
@@ -1151,8 +1344,6 @@ var __element = {
 		v = v===false?"none":(v===true?"all":v);
 		return this.bind("selectstart",function(e){return e.preventDefault();}).css({"-moz-user-select": v, "-webkit-user-select": v, "-ms-user-select":v, "user-select":v});
 	},
-
-
 	/**
 	 * Animation refactored
 		@delay : time wait to start
@@ -1268,51 +1459,35 @@ $.extend(Element.prototype,__element);
 
 
 /* DOM functions */
-//var $_runtime;
 var $e = function(type, args, target, namespace){
-	type = namespace? type.replace(/_/g, "-"):type;
-	var _el = namespace? document.createElementNS(namespace,type):document.createElement(type);
-	if(target && typeof(target)=="string")
-		target = $id(target);
+	type = namespace && $.isString(type)? type.replace(/_/g, "-"):type;
+	var _el = $.isString(type)? (namespace? document.createElementNS(namespace,type):document.createElement(type)) : ($.isElement(type)?type:null);
+	if(!_el) throw new Error("ERROR : $e wrong parameters ");
+	if($.isString(target))
+		target = document.getElementById(target);
 	if(args){
-		var dataType = typeof(args);
-		if(dataType=="string"){
+		if($.isString(args)){
 			switch(type){
 				case "img" : _el.src = $conf.image_path && args.indexOf("data:image")<0 && args.indexOf("http")<0? $conf.image_path+args:args;
 					break;
 				case "a" : _el.href = args;
 					break;
-				default : _el.innerHTML = args;
+				default :
+					if(args.match(/<.*>/))
+						_el.innerHTML = args;
+					else
+						_el.textContent = args;
 					break;
 			}
 		}else if($.isArray(args)){
-			for(var i=0;i<args.length;i++){
-				var o = args[i];
-				if(o!=null){
-					if($.isElement(o)){
-						_el.appendChild(o);
-					}else if($.isFunc(o)){
-						var thisEl = _el;
-						var res = o();
-						if($.isArray(res)){
-							for(var _i=0;_i<res.length;_i++){
-								if($.isElement(res[_i]))
-									thisEl.appendChild(res[_i]);
-							}
-						}else if($.isElement(res)){
-							thisEl.appendChild(res);
-						}
-						_el = thisEl;
-					}else{
-						if($app.onError)$app.onError("invalid_child_error");
-					}
-				}
+			for(var i=0,o;o=args[i];i++){
+				$e(_el,o,null,namespace);
 			}
 		}else if($.isElement(args)){
 			_el.appendChild(args);
 		}else if($.isFunc(args)){
-			return $e(type, args(), target);
-		}else if(dataType=="object"){
+			$e(_el, args(), null, namespace);
+		}else if($.isObject(args)){
 			for(var _k in args){
 				var _v = args[_k];
 				if(typeof(_v)=="function"){
@@ -1325,10 +1500,8 @@ var $e = function(type, args, target, namespace){
 	}
 	if(target&&typeof(target)!="function")
 		target.appendChild(_el);
-	
 	return _el;
 };
-
 
 /**
 NOT IN USE : "html","script","link","iframe","head","body","meta",
@@ -1412,52 +1585,59 @@ for(var i=0;i<__tags.length;i++){
 var $sel = function(options,attrs,target){
 	var onclick = attrs.onclick;
 	delete attrs["onclick"];
-	var values = attrs.value||[];
+	var values = attrs.value===undefined? []:attrs.value+"";
 	if($.isString(values))
 		values = values.split(",");
 	var drawFunc = $.isFunc(attrs.drawOption)?attrs.drawOption:null;
+	var doms = [];
 	for(var i=0,o;o=options[i];i++){
 		var lb = $label({},target);
+		var v = $.isObject(o)?o.value:i+1;
 		if(drawFunc) drawFunc(lb,i);
 		else{
-			lb.attr({html:o.label}).css({position:"relative","padding-left":"20px","text-align":"left"});
-			$input({type:attrs.type, name:attrs.name, value:o.value, checked:values.indexOf(o.value)>=0?true:false},lb)
+			lb.attr({html:$.isObject(o)?o.label:o}).css({position:"relative","padding-left":"20px","text-align":"left"});
+			if(attrs.columns)lb.css({width:100/parseInt(attrs.columns)+"%"});
+			$input({type:attrs.type, name:attrs.name, value:v, checked:values.indexOf(v+"")>=0?true:false},lb)
 				.css({display:"block",position:"absolute",left:0,top:"50%",transform:"translateY(-50%)"});
 			if(onclick) lb.bind("click",onclick);
 		}
+		doms.push(lb);
 	}
+	return doms;
 };
 
 var $radio = function(options,attrs,target){
+	attrs = attrs||{};
 	delete attrs["multiple"];
+	attrs.type='radio';
 	return $sel(options,attrs,target);
 };
 //window.RADIO = $radio;
 
 var $checkbox = function(options,attrs,target){
-	attrs["multiple"]=1;
+	attrs = attrs||{};
+	attrs.multiple=1;
+	attrs.type='checkbox';
 	return $sel(options,attrs,target);
 };
 //window.CHECKBOX = $checkbox;
 
 var $select = function(values,attrs,target){
-	if($browser.name=="MSIE" && $browser.ver<9 && attrs.name ){
-		var sele = document.createElement(["<select name=", attrs.name, "></select>"].join("\'"));
-		sele.attr(attrs);
-		if(target)
-			target.appendChild(sele);
-	}else{
-		sele = $e("select",attrs,target);
-	}
+	var s = $e("select",attrs,target);
 	if($.isArray(values)){
-		for(var i=0,v;v=values[i];i++) 
-			$e("option",{value:v,html:v}, sele);
+		for(var i=0,v;v=values[i];i++)
+			$e("option",{value:$.isObject(v)?v.value:i+1,html:$.isObject(v)?v.label:v}, s);
 	}else{
-		for(var v in values)$e("option",{value:v,html:values[v]}, sele);
+		for(var k in values){
+			var v = values[k];
+			if(!$.isFunc(v)){
+				$e("option",{value:$.isObject(v)?v.value:k,html:$.isObject(v)?v.label:v}, s);
+			}
+		}
 	}
 	if(attrs.value)
-		sele.value = attrs.value;
-	return sele;
+		s.value = attrs.value;
+	return s;
 };
 
 /**
@@ -1492,7 +1672,7 @@ var $styles=function(rules,target,id){
 		}
 	}
 	cs.appendChild(tn);
-	return sid;
+	return tn;
 };
 
 
@@ -1535,6 +1715,33 @@ var $http = {
 			xhr.runtime.onprogress = opts.onprogress;
 
 		var isFile = false;
+		method =method.toUpperCase();
+		var data = method==='GET'?[] : new FormData();//GET does not support formdata
+  		if(params){
+  			for (var key in params){
+  				var v = params[key];
+  				var vs = $.isArray(v)?v:[v];
+  				var isf = false;
+  				for(var i=0,vi;vi=vs[i++];){
+  					if(method!='GET'&&$.isFile(vi)){
+  						data.append(key,vi,vi.name);
+  						isFile=true;
+  						isf = true;
+  					}
+  				}
+  				if(!isf){
+  					if(method==='GET')
+  						data.push(encodeURIComponent(key)+'='+encodeURIComponent(v));
+  					else
+  						data.append(key,v);
+  				}
+  			}
+  			if(method == 'GET'){
+  				var prefix = url.indexOf('?')>0 ? '&':'?';
+  				url += prefix + data.join('&');
+  				data = null;
+  			}
+  		}
 		if(method == "UPLOAD"){
 			method = "POST";
 			isFile = true;
@@ -1572,35 +1779,28 @@ var $http = {
 	  			}
     		}
   		};
-  		var userdata = '';
-  		if(params){
-  			var datas = [];
-  			for (var key in params){
-                var value = params[key]+"";
-  				key = encodeURIComponent(key);
-                value =!isFile ? encodeURIComponent(value) :value;
-  				datas.push(key+'='+value);
-  			}
-  			userdata = datas.join('&');
-  			if(method == 'GET'){
-  				var prefix = url.indexOf('?')>0 ? '&':'?';
-  				url += prefix + userdata;
-  			}
-  		}
-  		method =method.toUpperCase();  
   		xhr.open(method,url,true);
-  		console.log(url,method);
-  		if(method == 'POST' || method == 'PUT' || method == 'DELETE'){
+  		if(method=='GET')
   			xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-  			xhr.send(userdata);
-  		}else
-  			xhr.send();
+  		/*
+  		var fd = {};
+  		if(data)
+  		for (var pair of data.entries()) {
+  			if(!fd[pair[0]])
+ 		   		fd[pair[0]]=pair[1];
+ 		   	else if($.isArray(fd[pair[0]])){
+ 		   		fd[pair[0]].push(pair[1]);
+ 		   	}else{
+ 		   		fd[pair[0]] = [fd[pair[0]], pair[1]];
+ 		   	}
+		}
+  		console.log(url,method,fd);
+  		*/
+  		xhr.send(data);
 	},
-	
 	get : function(url, params, callback, format){
 		$http.ajax({url:url, method:"GET", params:params, callback:callback, format:format});
 	},
-	
 	post : function(url, params, callback, format){
 		$http.ajax({url:url, method:"POST", params:params, callback:callback, format:format});
 	},
