@@ -128,7 +128,7 @@ form td.space,.detail-view td.space{width:10px !important;}
 input[type="text"],form input[type="password"],form input[type="number"]{height:36px;outline:none;line-height:36px;font-size:.85rem;
 	width:60%;background-color:#EEF1F3;margin:0;border:0;padding-left:10px;box-sizing:border-box;}
 
-input[disabled=disabled]{background-color:#656978;color:white;opacity:.7}
+input[disabled=disabled], select[disabled=disabled]{background-color:#656978;color:white;opacity:.7}
 
 input[type=checkbox]{width:14px; height:14px;
 	border:1px solid #AAB2BD;outline:0;appearance:none;-webkit-appearance:none;border-radius:2px;
@@ -162,7 +162,7 @@ select.mm,select.dd,select.hh,select.ii{width:48px;}
 select.yy+span,select.mm+span,select.dd+span,select.hh+span,select.ii+span,.form-item-datetime+span{width:30px;height:36px;line-height:40px;display:inline-block;text-align:center;font-size:.8rem;}
 
 /*textarea*/
-textarea{outline:none;background-color:#EEF1F3;width:60%;min-height:80px;margin:10px 0px 0 0;border:0;padding:10px;box-sizing:border-box;font-size:.85rem;resize: none;}
+textarea{outline:none;background-color:#EEF1F3;width:60%;min-height:80px;margin:0px 0px 0 0;border:0;padding:10px;box-sizing:border-box;font-size:.85rem;resize: none;}
 
 /*multiple*/
 form li[type="multiple"] td:first-child select,
@@ -190,9 +190,17 @@ form .error i{animation: fadein-err .25s ease-out forwards;}
 form .error[type="radio"] > div{outline:1px dashed red;}
 */
 
+form a{color:#15AA82;font-size:.75rem;}
+
 /*form title*/
 form h3,
 .detail-view h3 {font-size: 15px;text-align: left;border-bottom: 1px solid #EEE;color: #AAA;padding-bottom: 5px;}
+form span.subtitle {
+	margin-top: 10px;
+    font-size: 0.7rem;
+    line-height: 1.8;
+    display: inline-block;
+}
 
 /*form item switch*/
 .form-item-switch {display:block;width:40px;position:relative;height:44px;float:left;cursor:hand;cursor:pointer;}
@@ -212,6 +220,10 @@ form h3,
 	outline: none;border:0;color:#15AA82;font-weight:bold;font-size:.9rem;
 }
 #mask section>div:last-child>button:hover{transform:scale(1.1,1.1);cursor:pointer;}
+/*preview*/
+#mask section.preview{margin-top:30vh}
+#mask section.preview .detail-view{height: 70vh;overflow: scroll; border-bottom: 1px solid #EEE;}
+#mask section.preview .detail-view ul {width: 100%;}
 
 /*form item list menu row*/
 .form-item-list,.form-item-tree{position:relative;width:60%;min-height:36px;line-height:36px;margin-left:0;cursor:pointer;cursor:hand;background-color:#EEF1F3;text-align:left;overflow:hidden;}
@@ -291,6 +303,34 @@ background-size:10px 10px;background-position:50% 50%;cursor:hand;cursor:pointer
 .form-item-range input{width:185px !important;}
 .form-item-range b{font-size:9pt;display:inline-block;padding:5px;}
 
+form ul.copytext {
+    border: 1px solid #CCC;
+    background-color: #F1F1F1;
+    padding: 5px 10px;
+    border-radius: 3px;
+    width: 60%;
+    float: left;
+    box-sizing: border-box;
+    margin-bottom: 5px;
+    line-height: 2.3;
+}
+form ul.copytext span {
+    line-height: 1.0;
+    font-size: .8rem;
+    background-color: #15aa82;
+    color: #FFF;
+    padding: 8px 8px 6px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-right: 8px;
+    border-bottom: 2px solid #3e927c;
+    cursor: pointer;
+}
+form ul.copytext span:hover {
+    border-bottom: 1px solid #3e927c;
+    top: 1px;
+}
+
 #calendar {background-color:white;z-index:1000;position: fixed;width:270px;height:260px;box-shadow:0 1px 2px 1px rgba(0,0,0,0.3);}
 #calendar table{width: 270px;height:auto;background-color:white;margin:0;clear:none;}
 #calendar tr,#calendar th,#calendar td{height:30px;min-height:30px;max-height:30px;box-sizing:border-box;line-height:30px;border:0;text-align:center;font-size:9pt;}
@@ -359,7 +399,8 @@ background-size:10px 10px;background-position:50% 50%;cursor:hand;cursor:pointer
 .list-view tr:last-child td{height:40px;line-height:40px;}/*pages row*/
 .list-view th{font-weight:bold;color:#1F2A37;font-size:.85rem;position:relative;padding-left:24px;cursor:hand;cursor:pointer;white-space: nowrap;}
 .list-view th.list-view-checkbox{padding-left:16px;}
-.list-view th.none{cursor:default;}
+.list-view th.none{cursor:default;padding-left: 12px;}
+.list-view th.none:first-child{padding-left: 16px;}
 .list-view th:before{content:"";width:15px;height:20px;background-image:url(/images/ico_sort.svg);background-size:auto 20px;top:10px;left:2px;background-position:5px 50%}
 .list-view th.none:before{background-image:url(/images/ico_clear.svg);}
 .list-view th.on.asc:before{background-image:url(/images/ico_asc.svg);}
